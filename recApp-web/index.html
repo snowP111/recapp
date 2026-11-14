@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="recApp">
+  <meta name="theme-color" content="#f4efe6">
+  <title>recApp</title>
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+
+    <!-- ANMELDEN -->
+    <section id="ansicht-login" class="ansicht" hidden>
+      <div class="logo">rec<span>App</span></div>
+      <p class="untertitel">Deine Lernkarten aus dem Vault.</p>
+      <form id="login-form" class="karte">
+        <label>E-Mail<input id="login-email" type="email" autocomplete="username" autocapitalize="off" autocorrect="off" required></label>
+        <label>Passwort<input id="login-passwort" type="password" autocomplete="current-password" required></label>
+        <button type="submit" class="knopf haupt">ANMELDEN</button>
+        <p id="login-fehler" class="fehler" hidden></p>
+      </form>
+    </section>
+
+    <!-- START -->
+    <section id="ansicht-start" class="ansicht" hidden>
+      <header class="kopf">
+        <div class="logo klein">rec<span>App</span></div>
+        <button id="abmelden" class="knopf mini" type="button">ABMELDEN</button>
+      </header>
+
+      <div class="raster">
+        <div class="kachel gelb serie">
+          <div class="kachel-titel">SERIE</div>
+          <div class="zahl" id="serie-zahl">0</div>
+          <div class="klein-text" id="serie-text">Tage am Stück</div>
+        </div>
+        <div class="kachel cyan">
+          <div class="kachel-titel">HEUTE</div>
+          <div class="zahl" id="heute-zahl">0</div>
+          <div class="klein-text" id="heute-text">Karten offen</div>
+        </div>
+      </div>
+
+      <div class="kalender karte" id="kalender"></div>
+
+      <button id="alles-lernen" class="knopf haupt gross" type="button">ALLES LERNEN</button>
+
+      <h2 class="abschnitt">TEILBEREICH WÄHLEN</h2>
+      <div id="module"></div>
+
+      <p class="fusszeile" id="bestand"></p>
+    </section>
+
+    <!-- LERNEN -->
+    <section id="ansicht-lernen" class="ansicht" hidden>
+      <header class="kopf">
+        <button id="lernen-zurueck" class="knopf mini" type="button">← ZURÜCK</button>
+        <div class="fortschritt-text" id="fortschritt-text">1 / 20</div>
+      </header>
+      <div class="balken"><div id="fortschritt-balken"></div></div>
+
+      <div class="karte frage-karte">
+        <div class="stapel-name" id="karte-stapel"></div>
+        <div class="frage" id="karte-frage"></div>
+      </div>
+
+      <!-- Antwort tippen -->
+      <div id="block-tippen" hidden>
+        <textarea id="antwort-eingabe" rows="4" placeholder="Deine Antwort …" autocapitalize="sentences"></textarea>
+        <div class="knopf-reihe">
+          <button id="weiss-nicht" class="knopf" type="button">WEISS NICHT</button>
+          <button id="pruefen" class="knopf haupt" type="button">PRÜFEN</button>
+        </div>
+      </div>
+
+      <!-- Selbst bewerten -->
+      <div id="block-aufdecken" hidden>
+        <button id="aufdecken" class="knopf haupt gross" type="button">ANTWORT AUFDECKEN</button>
+      </div>
+
+      <!-- Ergebnis -->
+      <div id="block-ergebnis" hidden>
+        <div id="urteil" class="urteil"></div>
+        <div id="treffer" class="treffer"></div>
+        <div class="karte antwort-karte">
+          <div class="kachel-titel">MUSTERANTWORT</div>
+          <div class="antwort" id="karte-antwort"></div>
+        </div>
+        <div class="knopf-reihe" id="reihe-getippt">
+          <button id="doch-richtig" class="knopf" type="button">DOCH RICHTIG</button>
+          <button id="weiter" class="knopf haupt" type="button">WEITER</button>
+        </div>
+        <div class="knopf-reihe" id="reihe-selbst" hidden>
+          <button id="nicht-gewusst" class="knopf rot" type="button">NICHT GEWUSST</button>
+          <button id="gewusst" class="knopf gruen" type="button">GEWUSST</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FERTIG -->
+    <section id="ansicht-fertig" class="ansicht" hidden>
+      <div class="karte fertig-karte">
+        <div class="kachel-titel">GESCHAFFT</div>
+        <div class="zahl" id="fertig-zahl">0</div>
+        <p id="fertig-text"></p>
+      </div>
+      <div id="fertig-serie" class="kachel gelb serie"></div>
+      <button id="fertig-zurueck" class="knopf haupt gross" type="button">ZUR ÜBERSICHT</button>
+    </section>
+
+    <div id="laden" class="laden">LADE …</div>
+    <div id="meldung" class="meldung" hidden></div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script src="config.js"></script>
+  <script src="logik.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
