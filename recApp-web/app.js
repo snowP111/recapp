@@ -48,7 +48,7 @@
   function verbindeKnoepfe() {
     $("login-form").addEventListener("submit", anmelden);
     $("abmelden").addEventListener("click", abmelden);
-    $("alles-lernen").addEventListener("click", () => starteLernen(zustand.karten, "Alles"));
+    $("alles-lernen").addEventListener("click", () => starteLernen(zustand.karten, "Alles", { ohnePoolNeu: true }));
     $("lernen-zurueck").addEventListener("click", () => beendeSitzung(false));
     $("pruefen").addEventListener("click", pruefe);
     $("weiss-nicht").addEventListener("click", weissNicht);
@@ -56,6 +56,7 @@
     $("weiter").addEventListener("click", () => bewerte(zustand.sitzung.ergebnis));
     $("doch-richtig").addEventListener("click", dochRichtig);
     $("gewusst").addEventListener("click", () => bewerte(true));
+    $("unsicher").addEventListener("click", () => bewerte(L.UNSICHER));
     $("nicht-gewusst").addEventListener("click", () => bewerte(false));
     $("fertig-zurueck").addEventListener("click", () => ladeUndZeigeStart());
     $("antwort-eingabe").addEventListener("keydown", (e) => {
@@ -143,7 +144,7 @@
     return new Map([...zustand.stapel.values()].map((s) => [s.id, s.reihenfolge]));
   }
 
-  /** Fällige + heutige neue Karten innerhalb einer Auswahl. */
+  /** Fällige + heutige neue Karten innerhalb einer Auswahl (poolNeu: neue Klausur-Pool-Karten ohne Limit). */
   function heuteIn(karten) {
     return L.heutigeKarten(karten, zustand.fortschritt, zustand.heute, neueFrei(), reihenfolge());
   }
@@ -208,18 +209,23 @@
     }
     const leg = document.createElement("div");
     leg.className = "legende";
-    leg.textContent = "Letzte 4 Wochen · gelb = geschafft · blau = gelernt";
+    leg.textContent = "Letzte 4 Wochen · rot = geschafft · grau = gelernt";
     box.appendChild(leg);
   }
 
   const MODULFARBEN = ["pink", "cyan", "lime", "orange", "violett", "gelb"];
+  const istPoolModul = (modul) => [...zustand.stapel.values()].some((s) => s.modul === modul && s.id.startsWith(L.POOL_PRAEFIX));
 
   function zeigeModule() {
     const box = $("module");
     box.innerHTML = "";
-    const module = [...new Set([...zustand.stapel.values()].map((s) => s.modul))].sort((a, b) => a.localeCompare(b, "de"));
+    const alle = [...new Set([...zustand.stapel.values()].map((s) => s.modul))].sort((a, b) => a.localeCompare(b, "de"));
+    // Klausur-Pools zuerst – sie sind die Klausurvorbereitung
+    const module = [...alle.filter(istPoolModul), ...alle.filter((m) => !istPoolModul(m))];
+    let farbIndex = 0;
 
-    module.forEach((modul, i) => {
+    module.forEach((modul) => {
+      const pool = istPoolModul(modul);
       const stapelListe = [...zustand.stapel.values()]
         .filter((s) => s.modul === modul)
         .sort((a, b) => a.reihenfolge - b.reihenfolge || a.titel.localeCompare(b.titel, "de"));
@@ -230,10 +236,11 @@
       wrap.className = "modul";
       const kopf = document.createElement("button");
       kopf.type = "button";
-      kopf.className = `knopf modul-kopf kachel ${MODULFARBEN[i % MODULFARBEN.length]}`;
+      kopf.className = `knopf modul-kopf kachel ${pool ? "rot pool" : MODULFARBEN[farbIndex++ % MODULFARBEN.length]}`;
       kopf.innerHTML = `<span class="name"></span><span class="anzahl"></span>`;
-      kopf.querySelector(".name").textContent = (zustand.offenModule.has(modul) ? "▾ " : "▸ ") + modul;
-      setzeAnzahl(kopf.querySelector(".anzahl"), hm.faellig.length + hm.neu.length);
+      const anzeige = pool ? modul.replace(/^Klausur-Pool\s*/, "") : modul;
+      kopf.querySelector(".name").textContent = (zustand.offenModule.has(modul) ? "▾ " : "▸ ") + anzeige;
+      setzeAnzahl(kopf.querySelector(".anzahl"), hm.faellig.length + hm.neu.length + hm.poolNeu.length, pool ? kartenModul.length : undefined);
       kopf.addEventListener("click", () => {
         zustand.offenModule.has(modul) ? zustand.offenModule.delete(modul) : zustand.offenModule.add(modul);
         zeigeModule();
@@ -243,7 +250,7 @@
       if (zustand.offenModule.has(modul)) {
         const liste = document.createElement("div");
         liste.className = "stapel-liste";
-        liste.appendChild(stapelZeile("Ganzes Modul", kartenModul, modul));
+        liste.appendChild(stapelZeile(pool ? `Alle ${kartenModul.length} zusammen` : "Ganzes Modul", kartenModul, modul));
         for (const s of stapelListe) {
           const ks = zustand.karten.filter((k) => k.stapel_id === s.id);
           liste.appendChild(stapelZeile(s.titel, ks, s.titel));
@@ -261,7 +268,7 @@
     b.className = "stapel-zeile";
     b.innerHTML = `<span></span><span class="anzahl"></span>`;
     b.firstChild.textContent = titel;
-    setzeAnzahl(b.lastChild, h.faellig.length + h.neu.length, karten.length);
+    setzeAnzahl(b.lastChild, h.faellig.length + h.neu.length + h.poolNeu.length, karten.length);
     b.addEventListener("click", () => starteLernen(karten, sitzungsTitel));
     return b;
   }
@@ -275,9 +282,11 @@
   // LERNEN
   // ==========================================
 
-  function starteLernen(karten, titel) {
+  function starteLernen(karten, titel, optionen) {
     const h = heuteIn(karten);
-    let schlange = [...h.faellig, ...h.neu];
+    // Neue Pool-Karten (ohne Tageslimit) gemischt hinten an – bei „Alles lernen“ nicht, sonst wäre die Liste riesig
+    const poolNeu = optionen && optionen.ohnePoolNeu ? [] : mische([...h.poolNeu]);
+    let schlange = [...h.faellig, ...h.neu, ...poolNeu];
     let ueben = false;
     if (schlange.length === 0) {
       if (karten.length === 0) return meldung("Hier gibt es keine Karten.");
@@ -313,6 +322,7 @@
     $("fortschritt-balken").style.width = `${(s.pos / s.schlange.length) * 100}%`;
     $("karte-stapel").textContent = (zustand.stapel.get(k.stapel_id)?.titel || "") + (s.ueben ? " · Üben" : "");
     schreibeMarkdown($("karte-frage"), k.frage);
+    $("karte-frage").classList.toggle("lang", k.frage.length > 160);   // Fallstudien: Lesegröße statt Fragengröße
 
     const getippt = L.wirdGetippt(k);
     $("block-tippen").hidden = !getippt;
@@ -376,6 +386,8 @@
     schreibeMarkdown($("karte-antwort"), k.antwort);
     $("reihe-getippt").hidden = art === "selbst";
     $("reihe-selbst").hidden = art !== "selbst";
+    $("unsicher").hidden = !L.istPool(k);           // drei Stufen nur im Klausur-Pool (wie in Obsidian)
+    $("reihe-selbst").classList.toggle("drei", L.istPool(k));
     $("doch-richtig").hidden = art !== "falsch";
     window.scrollTo(0, 0);
   }
@@ -388,19 +400,20 @@
     if (error) meldung("Einwand nicht gespeichert: " + error.message);
   }
 
-  /** Zählt das Ergebnis, plant die Karte neu und geht zur nächsten. */
-  function bewerte(richtig) {
+  /** Zählt das Ergebnis (true, false oder „unsicher“), plant die Karte neu und geht zur nächsten. */
+  function bewerte(ergebnis) {
     const s = zustand.sitzung;
     const k = aktuelleKarte();
+    const richtig = ergebnis === true;
 
     if (!s.gewertet.has(k.id)) {
       s.gewertet.add(k.id);
       s.gelernt++;
       if (richtig) s.richtig++;
-      if (!s.ueben) speichereErgebnis(k, richtig);
+      if (!s.ueben) speichereErgebnis(k, ergebnis);
     }
-    if (!richtig) {
-      s.schlange.push(k.id);      // am Ende der Sitzung noch einmal
+    if (ergebnis === false) {
+      s.schlange.push(k.id);      // am Ende der Sitzung noch einmal (unsicher: morgen wieder)
     }
     s.pos++;
     if (s.pos >= s.schlange.length) {
@@ -410,10 +423,11 @@
     }
   }
 
-  function speichereErgebnis(k, richtig) {
+  function speichereErgebnis(k, ergebnis) {
+    const richtig = ergebnis === true;
     const alt = zustand.fortschritt.get(k.id);
-    const warNeu = !alt || !alt.faellig;
-    const neu = L.naechsterStand(alt, richtig, zustand.heute, zustand.abstaende);
+    const warNeu = (!alt || !alt.faellig) && !L.istPool(k);   // Pool-Karten belasten das Tageslimit nicht
+    const neu = L.naechsterStand(alt, ergebnis, zustand.heute, zustand.abstaende);
     const zeile = { karte_id: k.id, ...neu, zuletzt: new Date().toISOString() };
     zustand.fortschritt.set(k.id, zeile);
 
