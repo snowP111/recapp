@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+ <rect width="1024" height="1024" fill="#09090a"/>
+ <text x="104" y="176" font-family="Inter" font-weight="600" font-size="56" letter-spacing="14" fill="#8f8d87">RECAPP</text>
+ <line x1="104" y1="214" x2="920" y2="214" stroke="#34343a" stroke-width="4"/>
+ <text x="74" y="880" font-family="Inter Display" font-weight="600" font-size="800" letter-spacing="-40" fill="#ebe9e4">r</text>
+ <rect x="466" y="736" width="144" height="144" fill="#e8253b"/>
+</svg>

@@ -7,11 +7,11 @@ Die Karten kommen über **recApp Sync** (Java-Projekt `recApp`) nach Supabase.
 | Datei | Inhalt |
 |---|---|
 | `index.html` | Ansichten: Anmelden, Start, Lernen, Geschafft |
-| `style.css` | Neo-Brutalismus (Farben wie im Vault-Dashboard) |
+| `style.css` | Dark Swiss · Editorial Minimalism (wie das Vault-Design seit 20.11.2026) |
 | `logik.js` | Antwortprüfung, Karteikasten, fällige/neue Karten, Serie – ohne Oberfläche, testbar |
 | `app.js` | Oberfläche und Datenzugriff (supabase-js) |
 | `config.js` | Supabase-URL und **öffentlicher** Schlüssel |
-| `manifest.webmanifest`, `icons/` | Homescreen-App |
+| `manifest.webmanifest`, `icons/` | Homescreen-App; `icons/icon.svg` ist die Vorlage des Icons |
 
 ## Einrichten
 1. In `config.js` Projekt-URL und öffentlichen Schlüssel (`sb_publishable_…`) eintragen – zu finden in Supabase unter *Project Settings → API Keys* bzw. *Data API*. **Nie** den geheimen Schlüssel eintragen.
@@ -26,4 +26,5 @@ Die Daten schützt der Login (Registrierung in Supabase aus) plus Row Level Secu
 - **Selbst bewerten:** Formelkarten und Karten ohne Schlüsselwörter.
 - **Karteikasten:** richtig → ein Fach höher (1, 2, 4, 8, 16, 32 Tage), falsch → Fach 0 und am Ende der Sitzung noch einmal.
 - **Neue Karten:** höchstens 20 pro Tag (Tabelle `einstellungen`, `neue_pro_tag`).
+- **Klausur-Pool:** Stapel mit ID `Klausur-Pool/…` (aus den Lernmodus-Blöcken im Vault). Selbstbewertung in drei Stufen: *nicht gewusst* (Fach 0, in der Sitzung noch einmal), *unsicher* (Fach bleibt, morgen wieder), *gewusst* (ein Fach höher). Neue Pool-Karten ohne Tageslimit; sie zählen erst für die Serie, wenn sie einmal gelernt und wieder fällig sind. „Alles lernen“ nimmt keine neuen Pool-Karten mit – dafür das Pool-Modul öffnen („Alle … zusammen“).
 - **Serie:** Ein Tag zählt, wenn am Ende keine fälligen Karten mehr offen sind. Öffnest du die App an einem Tag ohne fällige Karten, zählt er ebenfalls.

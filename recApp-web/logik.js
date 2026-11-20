@@ -88,10 +88,25 @@
 
   const STANDARD_ABSTAENDE = [1, 2, 4, 8, 16, 32];
 
-  /** Neuer Lernstand nach einer Antwort. fach 0–5; richtig → ein Fach höher, falsch → Fach 0. */
-  function naechsterStand(stand, richtig, heute, abstaende) {
+  /** Bewertung „unsicher“ (nur Selbstbewertung im Klausur-Pool) */
+  const UNSICHER = "unsicher";
+
+  /**
+   * Neuer Lernstand nach einer Antwort. fach 0–5.
+   * richtig (true) → ein Fach höher · falsch (false) → Fach 0 · "unsicher" → Fach bleibt, morgen wieder dran.
+   */
+  function naechsterStand(stand, ergebnis, heute, abstaende) {
     const abst = abstaende && abstaende.length === 6 ? abstaende : STANDARD_ABSTAENDE;
     const altFach = stand && Number.isInteger(stand.fach) ? stand.fach : 0;
+    if (ergebnis === UNSICHER) {
+      return {
+        fach: altFach,
+        faellig: plusTage(heute, 1),
+        richtig: stand?.richtig || 0,
+        falsch: stand?.falsch || 0,
+      };
+    }
+    const richtig = ergebnis === true;
     const fach = richtig ? Math.min(altFach + 1, 5) : 0;
     return {
       fach,
@@ -99,6 +114,12 @@
       richtig: (stand?.richtig || 0) + (richtig ? 1 : 0),
       falsch: (stand?.falsch || 0) + (richtig ? 0 : 1),
     };
+  }
+
+  /** Klausur-Pool: Stapel-ID beginnt mit „Klausur-Pool/“ (kommt von recApp Sync). */
+  const POOL_PRAEFIX = "Klausur-Pool/";
+  function istPool(karte) {
+    return String(karte && karte.stapel_id || "").startsWith(POOL_PRAEFIX);
   }
 
   /** Braucht die Karte eine getippte Antwort? (sonst: aufdecken und selbst bewerten) */
@@ -109,16 +130,21 @@
   /**
    * Stellt die Karten für heute zusammen.
    * karten: aktive Karten; fortschritt: Map id → {fach, faellig, ...}; stapelReihenfolge: Map stapel_id → Sortierwert
-   * neueFrei: wie viele neue Karten heute noch dazukommen dürfen
-   * Ergebnis: { faellig: [...], neu: [...] } – faellig = früher gelernt und heute dran
+   * neueFrei: wie viele neue Karten heute noch dazukommen dürfen (gilt nicht für den Klausur-Pool)
+   * Ergebnis: { faellig, neu, poolNeu } – faellig = früher gelernt und heute dran (auch Pool),
+   * neu = neue Karten im Tageslimit, poolNeu = alle noch nie gelernten Pool-Karten (ohne Limit,
+   * zählen nicht für die Serie)
    */
   function heutigeKarten(karten, fortschritt, heute, neueFrei, stapelReihenfolge) {
     const faellig = [];
     const neu = [];
+    const poolNeu = [];
     for (const k of karten) {
       const f = fortschritt.get(k.id);
       if (f && f.faellig) {
         if (f.faellig <= heute) faellig.push(k);
+      } else if (istPool(k)) {
+        poolNeu.push(k);
       } else {
         neu.push(k);
       }
@@ -126,7 +152,8 @@
     const sortWert = (k) => (stapelReihenfolge && stapelReihenfolge.has(k.stapel_id) ? stapelReihenfolge.get(k.stapel_id) : 0);
     faellig.sort((a, b) => (fortschritt.get(a.id).faellig < fortschritt.get(b.id).faellig ? -1 : 1));
     neu.sort((a, b) => sortWert(a) - sortWert(b) || (a.position || 0) - (b.position || 0));
-    return { faellig, neu: neu.slice(0, Math.max(0, neueFrei)) };
+    poolNeu.sort((a, b) => sortWert(a) - sortWert(b));
+    return { faellig, neu: neu.slice(0, Math.max(0, neueFrei)), poolNeu };
   }
 
   // ==========================================
@@ -161,6 +188,7 @@
   const Logik = {
     normalisiere, levenshtein, pruefeAntwort, datum, plusTage,
     naechsterStand, wirdGetippt, heutigeKarten, serie, laengsteSerie, STANDARD_ABSTAENDE,
+    istPool, POOL_PRAEFIX, UNSICHER,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = Logik;
   else global.Logik = Logik;
