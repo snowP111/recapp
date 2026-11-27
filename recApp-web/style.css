@@ -246,3 +246,46 @@ code { font-family: var(--mono); background: var(--flaeche-2); border: 1px solid
   border-left: 3px solid var(--akzent); padding: 13px 15px;
   font-size: 14px; z-index: 6; max-width: 528px; margin: 0 auto;
 }
+
+/* ---------- Tagesziel, Klausur, Schwächen (27.11.2026) ---------- */
+.zahl .von { font-size: 22px; color: var(--gedaempft); letter-spacing: 0; margin-left: 2px; }
+.ziel-balken { height: 2px; background: var(--linie); margin-top: 10px; }
+.ziel-balken div { height: 100%; width: 0; background: var(--cyan); transition: width .25s; }
+.klausur-hinweis {
+  display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; padding: 12px 15px;
+  background: var(--flaeche); border: 1px solid var(--linie); border-left: 3px solid var(--akzent); font-size: 14px;
+}
+.klausur-hinweis .kachel-titel { color: var(--akzent-hell); }
+.offen-text { margin: -8px 0 16px; font-size: 12px; color: var(--gedaempft); text-align: center; }
+.knopf.gross:not(.haupt) { color: var(--text); }
+.kalender .tag.pause { border-color: var(--akzent); }
+.schwaechen { margin-left: 0; border-top: 1px solid var(--linie); }
+.schwaechen .stapel-zeile:first-child { font-weight: 400; }
+.stapel-zeile .block, .modul-kopf small {
+  display: block; font-size: 11px; font-weight: 400; letter-spacing: .02em; color: var(--gedaempft); margin-top: 2px;
+}
+.stapel-zeile .titel { display: block; }
+.klausur-zeile { background: rgba(232, 37, 59, .08); }
+.klausur-zeile .anzahl { border-color: var(--akzent); color: var(--akzent-hell); }
+.antwort-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.antwort-kopf .knopf.mini { padding: 5px 8px; }
+.ergebnis-liste details { border: 1px solid var(--linie); border-top: none; background: var(--flaeche); padding: 12px 14px; }
+.ergebnis-liste details:first-child { border-top: 1px solid var(--linie); }
+.ergebnis-liste summary { cursor: pointer; font-size: 14px; line-height: 1.4; }
+.ergebnis-liste .antwort { font-size: 14px; color: var(--gedaempft); }
+.ergebnis-liste { margin-bottom: 18px; }
+.offline {
+  position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 7; text-align: center;
+  background: var(--flaeche-2); border-bottom: 1px solid var(--linie-stark); color: var(--gedaempft);
+  font-size: 10px; font-weight: 600; letter-spacing: .16em; padding: 5px 10px;
+}
+
+/* ---------- Code und Listen in Karten ---------- */
+pre {
+  font-family: var(--mono); font-size: 13px; line-height: 1.5; background: var(--bg);
+  border: 1px solid var(--linie-stark); padding: 10px 12px; margin: 0 0 9px; overflow-x: auto; white-space: pre;
+}
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+.frage ul, .frage ol, .antwort ul, .antwort ol { margin: 0 0 9px; padding-left: 20px; }
+.frage li, .antwort li { margin-bottom: 3px; }
+mark { background: rgba(227, 192, 74, .25); color: inherit; padding: 0 2px; }

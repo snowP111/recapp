@@ -6,10 +6,12 @@ Die Karten kommen über **recApp Sync** (Java-Projekt `recApp`) nach Supabase.
 ## Dateien
 | Datei | Inhalt |
 |---|---|
-| `index.html` | Ansichten: Anmelden, Start, Lernen, Geschafft |
+| `index.html` | Ansichten: Anmelden, Start, Lernen, Geschafft, Klausur-Ergebnis |
 | `style.css` | Dark Swiss · Editorial Minimalism (wie das Vault-Design seit 20.11.2026) |
-| `logik.js` | Antwortprüfung, Karteikasten, fällige/neue Karten, Serie – ohne Oberfläche, testbar |
-| `app.js` | Oberfläche und Datenzugriff (supabase-js) |
+| `logik.js` | Antwortprüfung, Karteikasten, fällige/neue Karten, Tagesziel, Serie, Statistik, Markdown – ohne Oberfläche, testbar |
+| `app.js` | Oberfläche, Datenzugriff (supabase-js) und Offline-Betrieb (Warteschlange, gespeicherter Stand) |
+| `sw.js` | Service Worker: App offline verfügbar (App-Dateien zuerst aus dem Netz, Bibliotheken aus dem Cache) |
+| `tests/logik-test.js` | Logik-Tests: `node tests/logik-test.js` |
 | `config.js` | Supabase-URL und **öffentlicher** Schlüssel |
 | `manifest.webmanifest`, `icons/` | Homescreen-App; `icons/icon.svg` ist die Vorlage des Icons |
 
@@ -22,9 +24,14 @@ Die Karten kommen über **recApp Sync** (Java-Projekt `recApp`) nach Supabase.
 Die Daten schützt der Login (Registrierung in Supabase aus) plus Row Level Security; der Code selbst darf öffentlich sein.
 
 ## Regeln
+- **Runde:** höchstens 20 Karten – erst fällige (überfällige zuerst), dann neue. Module mit Klausur in den nächsten 21 Tagen kommen zuerst dran (Termin aus dem Feld `klausur` der Modulübersicht, über recApp Sync). Danach „Nächste Runde“, solange etwas offen ist.
+- **Tagesziel und Serie:** Ein Tag ist geschafft, wenn 20 Karten gelernt sind (Einstellung `tagesziel`, auch Übungskarten zählen) oder nichts mehr offen ist. **Pause-Tag:** Pro Woche (Mo–So) darf ein verpasster Tag die Serie überbrücken – er zählt nicht mit, bricht sie aber nicht.
 - **Tippen:** richtig, wenn alle Pflicht-Schlüsselwörter vorkommen (Groß-/Kleinschreibung egal, ä = ae, 1–2 Tippfehler erlaubt, Teil eines Worts reicht). „Doch richtig“ zählt die Karte und speichert die Antwort für Claude.
-- **Selbst bewerten:** Formelkarten und Karten ohne Schlüsselwörter.
-- **Karteikasten:** richtig → ein Fach höher (1, 2, 4, 8, 16, 32 Tage), falsch → Fach 0 und am Ende der Sitzung noch einmal.
+- **Selbst bewerten:** Formelkarten, Klausur-Pool und Karten ohne Schlüsselwörter.
+- **Karteikasten:** richtig → ein Fach höher (1, 2, 4, 8, 16, 32 Tage), falsch → **2 Fächer zurück** (mind. Fach 0) und am Ende der Runde noch einmal.
 - **Neue Karten:** höchstens 20 pro Tag (Tabelle `einstellungen`, `neue_pro_tag`).
-- **Klausur-Pool:** Stapel mit ID `Klausur-Pool/…` (aus den Lernmodus-Blöcken im Vault). Selbstbewertung in drei Stufen: *nicht gewusst* (Fach 0, in der Sitzung noch einmal), *unsicher* (Fach bleibt, morgen wieder), *gewusst* (ein Fach höher). Neue Pool-Karten ohne Tageslimit; sie zählen erst für die Serie, wenn sie einmal gelernt und wieder fällig sind. „Alles lernen“ nimmt keine neuen Pool-Karten mit – dafür das Pool-Modul öffnen („Alle … zusammen“).
-- **Serie:** Ein Tag zählt, wenn am Ende keine fälligen Karten mehr offen sind. Öffnest du die App an einem Tag ohne fällige Karten, zählt er ebenfalls.
+- **Klausur-Pool:** Stapel mit ID `Klausur-Pool/…` (aus den Lernmodus-Blöcken im Vault). Selbstbewertung in drei Stufen: *nicht gewusst*, *unsicher* (Fach bleibt, morgen wieder), *gewusst*. Neue Pool-Karten ohne Tageslimit. **Klausur simulieren:** 20 zufällige Pool-Fragen, Ergebnis in % am Ende (unsicher zählt halb), Verlauf in Tabelle `pruefungen`.
+- **Schwierige Karten:** schon falsch beantwortet und noch in Fach 0–1 oder mit Fehlerquote ab 34 %. **Schwächen:** die 3 Stapel mit der schlechtesten Trefferquote (ab 6 Antworten, unter 80 %). **Sicher:** Karte ab Fach 3.
+- **Melden:** Knopf an der Musterantwort → Tabelle `meldungen`; recApp Sync schreibt Meldungen und „Doch richtig“ beim Hochladen in die Vault-Notiz *Rückmeldungen recApp*.
+- **Offline:** Die App merkt sich den zuletzt geladenen Stand und alle Antworten in einer Warteschlange (localStorage); wieder online wird sie automatisch übertragen. Nicht abmelden, solange etwas wartet.
+- **Datenbank:** `supabase/ergaenzung-2-tagesziel-klausur.sql` (im Java-Projekt) muss ausgeführt sein. Ohne sie läuft die App, aber ohne Klausurtermine, Klausur-Ergebnisse und Meldungen.
