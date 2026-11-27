@@ -17,19 +17,18 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <main id="app">
 
     <!-- ANMELDEN -->
-    <section id="ansicht-login" class="ansicht" hidden>
-      <div class="logo">rec<span>App</span></div>
-      <p class="untertitel">Deine Lernkarten aus dem Vault.</p>
-      <form id="login-form" class="karte">
+    <section id="ansicht-login" class="ansicht login" hidden>
+      <h1 class="headline">rec<span>App</span>.</h1>
+      <form id="login-form" class="formular">
         <label>E-Mail<input id="login-email" type="email" autocomplete="username" autocapitalize="off" autocorrect="off" required></label>
         <label>Passwort<input id="login-passwort" type="password" autocomplete="current-password" required></label>
-        <button type="submit" class="knopf haupt">ANMELDEN</button>
+        <button type="submit" class="knopf haupt">Anmelden <span class="pfeil">→</span></button>
         <p id="login-fehler" class="fehler" hidden></p>
       </form>
     </section>
@@ -37,115 +36,122 @@
     <!-- START -->
     <section id="ansicht-start" class="ansicht" hidden>
       <header class="kopf">
-        <div class="logo klein">rec<span>App</span></div>
-        <button id="abmelden" class="knopf mini" type="button">ABMELDEN</button>
+        <div class="marke">rec<span>App</span></div>
+        <button id="abmelden" class="leise" type="button">Abmelden</button>
       </header>
 
-      <div class="raster">
-        <div class="kachel gelb serie">
-          <div class="kachel-titel">SERIE</div>
-          <div class="zahl" id="serie-zahl">0</div>
-          <div class="klein-text" id="serie-text">Tage am Stück</div>
+      <div class="start-raster">
+        <div class="spalte-haupt">
+          <p id="klausur-hinweis" class="label rot" hidden></p>
+          <h1 class="headline" id="ziel-text">Noch 20 Karten.</h1>
+
+          <div class="kennzahlen">
+            <div class="kennzahl">
+              <div class="label">Serie</div>
+              <div class="zahl rot" id="serie-zahl">0</div>
+              <div class="neben" id="serie-text">Tage</div>
+            </div>
+            <div class="kennzahl">
+              <div class="label">Heute</div>
+              <div class="zahl"><span id="ziel-zahl">0</span><span class="von" id="ziel-von">/20</span></div>
+              <div class="balken"><div id="ziel-balken"></div></div>
+            </div>
+            <div class="kennzahl">
+              <div class="label">Offen</div>
+              <div class="zahl" id="offen-text">0</div>
+              <div class="neben" id="offen-neben"></div>
+            </div>
+          </div>
+
+          <div class="aktionen">
+            <button id="lernen-start" class="knopf haupt" type="button">Runde starten <span class="pfeil">→</span></button>
+            <button id="schwierig-start" class="textlink" type="button" hidden>Schwierige Karten</button>
+          </div>
+
+          <div class="abschnitt-kopf label">Letzte 4 Wochen</div>
+          <div class="kalender" id="kalender"></div>
+
+          <div class="abschnitt-kopf label" id="schwaechen-titel" hidden>Schwächen</div>
+          <div id="schwaechen" class="liste" hidden></div>
         </div>
-        <div class="kachel cyan">
-          <div class="kachel-titel">TAGESZIEL</div>
-          <div class="zahl"><span id="ziel-zahl">0</span><span class="von" id="ziel-von">/20</span></div>
-          <div class="ziel-balken"><div id="ziel-balken"></div></div>
-          <div class="klein-text" id="ziel-text">Noch 20 Karten</div>
+
+        <div class="spalte-neben">
+          <div class="abschnitt-kopf label">Teilbereiche</div>
+          <div id="module" class="liste"></div>
+          <p class="fusszeile" id="bestand"></p>
         </div>
       </div>
-
-      <div id="klausur-hinweis" class="klausur-hinweis" hidden></div>
-
-      <button id="lernen-start" class="knopf haupt gross" type="button">RUNDE STARTEN</button>
-      <p class="offen-text" id="offen-text"></p>
-      <button id="schwierig-start" class="knopf gross" type="button" hidden>SCHWIERIGE KARTEN</button>
-
-      <div class="kalender karte" id="kalender"></div>
-
-      <h2 class="abschnitt" id="schwaechen-titel" hidden>SCHWÄCHEN</h2>
-      <div id="schwaechen" class="stapel-liste schwaechen" hidden></div>
-
-      <h2 class="abschnitt">TEILBEREICH WÄHLEN</h2>
-      <div id="module"></div>
-
-      <p class="fusszeile" id="bestand"></p>
     </section>
 
     <!-- LERNEN -->
-    <section id="ansicht-lernen" class="ansicht" hidden>
+    <section id="ansicht-lernen" class="ansicht arbeit" hidden>
       <header class="kopf">
-        <button id="lernen-zurueck" class="knopf mini" type="button">← ZURÜCK</button>
+        <button id="lernen-zurueck" class="leise" type="button">← Zurück</button>
         <div class="fortschritt-text" id="fortschritt-text">1 / 20</div>
       </header>
-      <div class="balken"><div id="fortschritt-balken"></div></div>
+      <div class="balken lern-balken"><div id="fortschritt-balken"></div></div>
 
-      <div class="karte frage-karte">
-        <div class="stapel-name" id="karte-stapel"></div>
-        <div class="frage" id="karte-frage"></div>
-      </div>
+      <div class="label" id="karte-stapel"></div>
+      <div class="frage" id="karte-frage"></div>
 
       <!-- Antwort tippen -->
       <div id="block-tippen" hidden>
-        <textarea id="antwort-eingabe" rows="4" placeholder="Deine Antwort …" autocapitalize="sentences"></textarea>
+        <textarea id="antwort-eingabe" rows="4" placeholder="Deine Antwort" autocapitalize="sentences"></textarea>
         <div class="knopf-reihe">
-          <button id="weiss-nicht" class="knopf" type="button">WEISS NICHT</button>
-          <button id="pruefen" class="knopf haupt" type="button">PRÜFEN</button>
+          <button id="weiss-nicht" class="knopf" type="button">Weiß nicht</button>
+          <button id="pruefen" class="knopf haupt" type="button">Prüfen</button>
         </div>
       </div>
 
       <!-- Selbst bewerten -->
       <div id="block-aufdecken" hidden>
-        <button id="aufdecken" class="knopf haupt gross" type="button">ANTWORT AUFDECKEN</button>
+        <button id="aufdecken" class="knopf haupt breit" type="button">Antwort aufdecken</button>
       </div>
 
       <!-- Ergebnis -->
       <div id="block-ergebnis" hidden>
         <div id="urteil" class="urteil"></div>
         <div id="treffer" class="treffer"></div>
-        <div class="karte antwort-karte">
-          <div class="antwort-kopf">
-            <div class="kachel-titel">MUSTERANTWORT</div>
-            <button id="melden" class="knopf mini" type="button">MELDEN</button>
-          </div>
-          <div class="antwort" id="karte-antwort"></div>
+        <div class="antwort-kopf">
+          <span class="label">Musterantwort</span>
+          <button id="melden" class="leise" type="button">Melden</button>
         </div>
+        <div class="antwort" id="karte-antwort"></div>
         <div class="knopf-reihe" id="reihe-getippt">
-          <button id="doch-richtig" class="knopf" type="button">DOCH RICHTIG</button>
-          <button id="weiter" class="knopf haupt" type="button">WEITER</button>
+          <button id="doch-richtig" class="knopf" type="button">Doch richtig</button>
+          <button id="weiter" class="knopf haupt" type="button">Weiter <span class="pfeil">→</span></button>
         </div>
         <div class="knopf-reihe" id="reihe-selbst" hidden>
-          <button id="nicht-gewusst" class="knopf rot" type="button">NICHT GEWUSST</button>
-          <button id="unsicher" class="knopf gelb-k" type="button" hidden>UNSICHER</button>
-          <button id="gewusst" class="knopf gruen" type="button">GEWUSST</button>
+          <button id="nicht-gewusst" class="knopf bewertung rot" type="button">Nicht gewusst</button>
+          <button id="unsicher" class="knopf bewertung gelb" type="button" hidden>Unsicher</button>
+          <button id="gewusst" class="knopf bewertung gruen" type="button">Gewusst</button>
         </div>
       </div>
     </section>
 
     <!-- FERTIG -->
-    <section id="ansicht-fertig" class="ansicht" hidden>
-      <div class="karte fertig-karte">
-        <div class="kachel-titel">GESCHAFFT</div>
-        <div class="zahl" id="fertig-zahl">0</div>
-        <p id="fertig-text"></p>
+    <section id="ansicht-fertig" class="ansicht arbeit" hidden>
+      <div class="label rot" id="fertig-serie"></div>
+      <h1 class="headline"><span id="fertig-zahl">0</span> Karten.</h1>
+      <p class="neben gross" id="fertig-text"></p>
+      <div class="aktionen">
+        <button id="fertig-weiter" class="knopf haupt" type="button" hidden>Nächste Runde</button>
+        <button id="fertig-zurueck" class="textlink" type="button">Zur Übersicht</button>
       </div>
-      <div id="fertig-serie" class="kachel gelb serie"></div>
-      <button id="fertig-weiter" class="knopf haupt gross" type="button" hidden>NÄCHSTE RUNDE</button>
-      <button id="fertig-zurueck" class="knopf gross" type="button">ZUR ÜBERSICHT</button>
     </section>
 
     <!-- KLAUSUR-ERGEBNIS -->
-    <section id="ansicht-ergebnis" class="ansicht" hidden>
-      <div class="karte fertig-karte">
-        <div class="kachel-titel">KLAUSUR-SIMULATION</div>
-        <div class="zahl"><span id="ergebnis-zahl">0</span><span class="von">%</span></div>
-        <p id="ergebnis-text"></p>
-        <p id="ergebnis-vergleich" class="klein-text"></p>
-      </div>
-      <h2 class="abschnitt" id="ergebnis-liste-titel">NICHT GEWUSST</h2>
+    <section id="ansicht-ergebnis" class="ansicht arbeit" hidden>
+      <div class="label rot">Klausur-Simulation</div>
+      <h1 class="headline"><span id="ergebnis-zahl">0</span><span class="von">%</span></h1>
+      <p class="neben gross" id="ergebnis-text"></p>
+      <p class="neben" id="ergebnis-vergleich"></p>
+      <div class="abschnitt-kopf label" id="ergebnis-liste-titel">Nicht gewusst</div>
       <div id="ergebnis-liste" class="ergebnis-liste"></div>
-      <button id="ergebnis-ueben" class="knopf haupt gross" type="button">NICHT GEWUSSTE ÜBEN</button>
-      <button id="ergebnis-zurueck" class="knopf gross" type="button">ZUR ÜBERSICHT</button>
+      <div class="aktionen">
+        <button id="ergebnis-ueben" class="knopf haupt" type="button">Nicht Gewusstes üben</button>
+        <button id="ergebnis-zurueck" class="textlink" type="button">Zur Übersicht</button>
+      </div>
     </section>
 
     <div id="laden" class="laden">LADE …</div>
@@ -157,7 +163,7 @@
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script src="config.js"></script>
-  <script src="logik.js?v=3"></script>
-  <script src="app.js?v=3"></script>
+  <script src="logik.js?v=4"></script>
+  <script src="app.js?v=4"></script>
 </body>
 </html>
