@@ -1,239 +1,212 @@
 /* ==========================================================
-   recApp – Dark Swiss · Editorial Minimalism
-   Gleicher Stil wie der Obsidian-Vault (Snippet swiss-basis):
-   fast schwarz, Haarlinien, große enge Titel, Versal-Labels,
-   eine Signalfarbe Rot. Keine Schatten, keine Rundungen.
+   recApp – Dark Swiss (Skill „dark-swiss-webapp“)
+   Tiefschwarz, Weiß, Signalrot. Linien statt Karten,
+   eine Hauptaktion pro Ansicht, große Headlines.
    ========================================================== */
 :root {
-  --bg: #09090a;            /* Seite */
-  --flaeche: #101012;       /* Kachel */
-  --flaeche-2: #16161a;     /* Hover, Eingabefelder */
-  --linie: #222226;         /* Haarlinie */
+  --bg: #09090a;
+  --flaeche: #101012;
+  --flaeche-2: #16161a;
+  --linie: #222226;
   --linie-stark: #34343a;
-  --text: #ebe9e4;          /* warmes Weiß */
+  --text: #ebe9e4;
   --gedaempft: #8f8d87;
   --blass: #5d5b57;
-  --akzent: #e8253b;        /* Signalfarbe */
+  --akzent: #e8253b;
   --akzent-hell: #ff4d5e;
-  /* Kennfarben – nur als feine Linie oder kleines Quadrat */
+  --gruen: #9cc95a;
+  /* Kennfarben – nur als kleines Quadrat (Module) */
   --gelb: #e3c04a;
   --pink: #e06aa8;
   --cyan: #4fb8d9;
   --lime: #9cc95a;
   --orange: #e8913a;
   --violett: #9b87e8;
-  --gruen: #9cc95a;
   --sans: "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --mono: "SF Mono", "JetBrains Mono", Menlo, monospace;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; background: var(--bg); }
 body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--sans);
-  font-size: 16px;
-  line-height: 1.45;
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-size: 16px; line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 #app {
-  max-width: 560px;
-  margin: 0 auto;
-  padding: calc(18px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));
+  max-width: 1200px; margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+           calc(48px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
 }
 [hidden] { display: none !important; }
 ::selection { background: rgba(232, 37, 59, .3); }
+button { font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+:focus-visible { outline: 1px solid var(--akzent); outline-offset: 2px; }
 
-/* ---------- Logo und Kopf ---------- */
-.logo {
-  font-size: 64px; font-weight: 600; letter-spacing: -.05em; line-height: .95;
-  margin: 56px 0 0; color: var(--text);
+/* ---------- Typografie ---------- */
+.headline {
+  font-size: clamp(40px, 7vw, 72px); font-weight: 600; letter-spacing: -.04em; line-height: .95;
+  margin: 0 0 32px;
 }
-.logo span { color: var(--text); }
-.logo::after {                       /* Signalquadrat wie im App-Icon */
-  content: ""; display: inline-block; width: .16em; height: .16em;
-  background: var(--akzent); margin-left: .06em; vertical-align: baseline;
-}
-.logo.klein { font-size: 26px; margin: 0; letter-spacing: -.04em; }
-.untertitel {
-  color: var(--gedaempft); margin: 14px 0 28px; font-size: 12px;
-  letter-spacing: .16em; text-transform: uppercase;
-}
-.kopf {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--linie);
-}
-.abschnitt {
-  font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--gedaempft); margin: 30px 0 10px; padding-bottom: 8px;
-  border-bottom: 1px solid var(--linie);
-}
-
-/* ---------- Bausteine ---------- */
-.karte {
-  background: var(--flaeche);
-  border: 1px solid var(--linie);
-  padding: 18px;
-  margin-bottom: 16px;
-}
-.raster { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 16px; border: 1px solid var(--linie); }
-.kachel {
-  position: relative; background: var(--flaeche); border: none;
-  border-top: 2px solid var(--linie-stark); padding: 14px 16px 16px;
-}
-.raster .kachel + .kachel { border-left: 1px solid var(--linie); }
-.kachel.gelb { border-top-color: var(--gelb); }
-.kachel.cyan { border-top-color: var(--cyan); }
-.kachel.pink { border-top-color: var(--pink); }
-.kachel.lime { border-top-color: var(--lime); }
-.kachel.violett { border-top-color: var(--violett); }
-.kachel.orange { border-top-color: var(--orange); }
-.kachel.rot { border-top-color: var(--akzent); }
-.kachel-titel {
+.headline .rot, .headline span.rot { color: var(--akzent); }
+.headline .von, .zahl .von { font-size: .4em; font-weight: 400; color: var(--gedaempft); letter-spacing: 0; margin-left: 4px; }
+.label {
   font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gedaempft);
 }
+.label.rot { color: var(--akzent-hell); }
+.neben { font-size: 12px; color: var(--gedaempft); margin: 4px 0 0; }
+.neben.gross { font-size: 16px; margin: 0 0 8px; }
 .zahl {
-  font-size: 56px; font-weight: 300; line-height: 1; letter-spacing: -.04em;
-  margin-top: 10px; font-variant-numeric: tabular-nums;
+  font-size: clamp(48px, 9vw, 72px); font-weight: 300; line-height: 1; letter-spacing: -.04em;
+  margin-top: 12px; font-variant-numeric: tabular-nums;
 }
-.serie .zahl { color: var(--akzent); }
-.klein-text { font-size: 12px; color: var(--gedaempft); margin-top: 6px; }
+.zahl.rot { color: var(--akzent); }
+.fusszeile { color: var(--blass); font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-top: 32px; }
 
-label {
-  display: block; font-size: 11px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--gedaempft); margin-bottom: 16px;
+/* ---------- Kopf ---------- */
+.kopf {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding-bottom: 16px; margin-bottom: 48px; border-bottom: 1px solid var(--linie);
 }
+.marke { font-size: 22px; font-weight: 600; letter-spacing: -.04em; }
+.marke::after, .login .headline::after {
+  content: ""; display: inline-block; width: .2em; height: .2em; background: var(--akzent); margin-left: .08em;
+}
+.login .headline::after { display: none; }
+.login .headline span, .marke span { color: var(--text); }
+.leise {
+  background: none; border: none; padding: 12px 0; min-height: 44px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--gedaempft);
+}
+.leise:active { color: var(--text); }
+
+/* ---------- Knöpfe und Links ---------- */
+.knopf {
+  display: inline-flex; align-items: center; justify-content: center; gap: 24px;
+  font: 600 12px/1 var(--sans); letter-spacing: .16em; text-transform: uppercase;
+  padding: 15px 18px; min-height: 48px; border: 1px solid var(--linie-stark); border-radius: 0;
+  background: transparent; color: var(--text); cursor: pointer; transition: background .12s, border-color .12s;
+}
+.knopf:active { background: var(--flaeche-2); }
+.knopf:disabled { opacity: .4; }
+.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.knopf.haupt:active { background: var(--akzent-hell); }
+.knopf.breit { width: 100%; }
+.pfeil { font-size: 16px; letter-spacing: 0; }
+.textlink {
+  display: inline-flex; align-items: center; gap: 24px; background: none; border: none; border-radius: 0;
+  border-bottom: 2px solid var(--akzent); padding: 12px 0 6px; cursor: pointer;
+  font-size: 15px; font-weight: 500; color: var(--text);
+}
+.textlink::after { content: "→"; }
+.knopf-reihe { display: flex; gap: 8px; margin: 24px 0; }
+.knopf-reihe > .knopf { flex: 1; padding-left: 8px; padding-right: 8px; }
+.aktionen { display: flex; flex-direction: column; align-items: stretch; gap: 16px; margin: 32px 0 64px; }
+.aktionen .textlink { align-self: flex-start; }
+.knopf.bewertung { border-bottom-width: 2px; }
+.knopf.bewertung.rot { border-bottom-color: var(--akzent); }
+.knopf.bewertung.gelb { border-bottom-color: var(--gelb); }
+.knopf.bewertung.gruen { border-bottom-color: var(--gruen); }
+@media (hover: hover) {
+  .knopf:hover { border-color: var(--gedaempft); }
+  .knopf.haupt:hover { background: var(--akzent-hell); border-color: var(--akzent-hell); }
+  .leise:hover, .textlink:hover { color: var(--akzent-hell); }
+  .zeile:hover { background: var(--flaeche); }
+}
+
+/* ---------- Formular ---------- */
+.formular { max-width: 400px; display: flex; flex-direction: column; gap: 24px; margin-top: 48px; }
+.formular .knopf { margin-top: 8px; }
+label { display: block; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gedaempft); }
 input, textarea {
-  display: block; width: 100%; margin-top: 8px;
-  font: inherit; font-size: 16px;               /* verhindert Zoom auf dem iPhone */
-  letter-spacing: 0; text-transform: none;
+  display: block; width: 100%; margin-top: 8px; font: inherit; font-size: 16px; letter-spacing: 0; text-transform: none;
   padding: 12px; background: var(--bg); color: var(--text);
   border: 1px solid var(--linie-stark); border-radius: 0; box-shadow: none; -webkit-appearance: none;
 }
 input:focus, textarea:focus { outline: none; border-color: var(--akzent); }
-textarea { resize: vertical; min-height: 120px; margin-bottom: 14px; }
+textarea { resize: vertical; min-height: 128px; margin-top: 32px; }
+.fehler { color: var(--akzent-hell); font-size: 14px; margin: 0; }
 
-.knopf {
-  font: inherit; font-weight: 600; font-size: 12px; letter-spacing: .16em; text-transform: uppercase;
-  background: var(--bg); color: var(--text);
-  border: 1px solid var(--linie-stark); border-radius: 0; box-shadow: none;
-  padding: 13px 16px; cursor: pointer; -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; transition: background .12s, border-color .12s;
+/* ---------- Kennzahlen (Raster mit Haarlinien, keine Kästen) ---------- */
+.kennzahlen { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--linie); border-bottom: 1px solid var(--linie); }
+.kennzahl { padding: 16px 12px 16px 0; min-width: 0; }
+.kennzahl + .kennzahl { border-left: 1px solid var(--linie); padding-left: 12px; }
+.balken { height: 2px; background: var(--linie); margin-top: 12px; }
+.balken div { height: 100%; width: 0; background: var(--akzent); transition: width .25s; }
+
+/* ---------- Abschnitte, Listen ---------- */
+.abschnitt-kopf { padding-bottom: 12px; border-bottom: 1px solid var(--linie); margin-top: 48px; }
+.liste { margin-bottom: 0; }
+.zeile {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  min-height: 56px; padding: 12px 0; background: none; border: none; border-bottom: 1px solid var(--linie);
+  text-align: left; cursor: pointer; color: var(--text);
 }
-.knopf:active { background: var(--flaeche-2); }
-.knopf:disabled { opacity: .4; }
-.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: #09090a; }
-.knopf.haupt:active { background: var(--akzent-hell); }
-.knopf.gross { width: 100%; padding: 17px; font-size: 13px; margin-bottom: 16px; }
-.knopf.mini { padding: 7px 10px; font-size: 10px; color: var(--gedaempft); }
-/* Bewertung: Farbe nur als Unterkante – wie in der Lernzentrale */
-.knopf.rot, .knopf.gelb-k, .knopf.gruen { border-bottom-width: 2px; }
-.knopf.rot { border-bottom-color: var(--akzent); }
-.knopf.gelb-k { border-bottom-color: var(--gelb); }
-.knopf.gruen { border-bottom-color: var(--gruen); }
-.knopf-reihe { display: flex; gap: 8px; margin-bottom: 16px; }
-.knopf-reihe > .knopf { flex: 1; padding-left: 6px; padding-right: 6px; }
-.fehler { color: var(--akzent-hell); font-size: 14px; margin: 12px 0 0; }
+.zeile:active { background: var(--flaeche); }
+.zeile .titel { display: block; font-size: 15px; font-weight: 500; }
+.zeile .neben { display: block; margin-top: 2px; }
+.zeile .wert {
+  font-size: 13px; font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.zeile .wert.null { color: var(--blass); }
+.zeile .wert.rot { color: var(--akzent-hell); }
+.zeile.modul .titel { font-size: 17px; }
+.zeile.modul .titel, .zeile.modul .neben { padding-left: 20px; }
+.zeile.modul .titel { position: relative; }
+.quadrat { position: absolute; left: 0; top: .5em; width: 8px; height: 8px; background: var(--linie-stark); }
+.quadrat.gelb { background: var(--gelb); } .quadrat.pink { background: var(--pink); } .quadrat.cyan { background: var(--cyan); }
+.quadrat.lime { background: var(--lime); } .quadrat.orange { background: var(--orange); } .quadrat.violett { background: var(--violett); }
+.quadrat.rot { background: var(--akzent); }
+.unterliste { padding-left: 20px; }
+.unterliste .zeile { min-height: 48px; }
+.unterliste .zeile .titel { font-size: 14px; font-weight: 400; }
 
 /* ---------- Kalender ---------- */
-.kalender { display: grid; grid-template-columns: repeat(14, 1fr); gap: 3px; padding: 14px; }
-.kalender .tag { aspect-ratio: 1; border: 1px solid var(--linie-stark); background: var(--bg); }
-.kalender .tag.gelernt { background: #3a3a40; border-color: #4a4a52; }
+.kalender { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; padding-top: 16px; }
+.kalender .tag { aspect-ratio: 1; border: 1px solid var(--linie-stark); }
+.kalender .tag.gelernt { background: var(--linie-stark); }
 .kalender .tag.geschafft { background: var(--akzent); border-color: var(--akzent); }
+.kalender .tag.pause { border-color: var(--akzent); }
 .kalender .tag.heute { outline: 1px solid var(--text); outline-offset: 2px; }
-.kalender .legende {
-  grid-column: 1 / -1; font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  color: var(--blass); margin-top: 8px;
-}
-
-/* ---------- Module und Stapel ---------- */
-.modul { margin-bottom: 8px; }
-.knopf.modul-kopf {
-  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
-  text-align: left; text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 500;
-  border: 1px solid var(--linie); border-left: 3px solid var(--linie-stark); background: var(--flaeche);
-  padding: 15px 14px;
-}
-.modul-kopf.pink { border-left-color: var(--pink); }
-.modul-kopf.cyan { border-left-color: var(--cyan); }
-.modul-kopf.lime { border-left-color: var(--lime); }
-.modul-kopf.orange { border-left-color: var(--orange); }
-.modul-kopf.violett { border-left-color: var(--violett); }
-.modul-kopf.gelb { border-left-color: var(--gelb); }
-.modul-kopf.rot { border-left-color: var(--akzent); }
-.modul-kopf.pool { background: linear-gradient(90deg, rgba(232, 37, 59, .14), var(--flaeche) 70%); }
-.modul-kopf.pool .name::before {
-  content: "KLAUSUR-POOL"; display: block; font-size: 10px; font-weight: 600; letter-spacing: .18em;
-  color: var(--akzent-hell); margin-bottom: 3px;
-}
-.modul-kopf .name { font-weight: 500; }
-.anzahl {
-  font-size: 11px; font-weight: 600; letter-spacing: .08em; color: var(--text);
-  border: 1px solid var(--linie-stark); padding: 3px 8px; white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-.anzahl.null { color: var(--blass); }
-.stapel-liste { border: 1px solid var(--linie); border-top: none; background: var(--bg); margin-left: 3px; }
-.stapel-zeile {
-  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px;
-  font: inherit; font-size: 14px; text-align: left; background: none; border: none;
-  border-top: 1px solid var(--linie); padding: 13px 14px; color: var(--text); cursor: pointer;
-}
-.stapel-zeile:first-child { border-top: none; font-weight: 600; }
-.stapel-zeile:active { background: var(--flaeche-2); }
-.fusszeile {
-  color: var(--blass); font-size: 10px; letter-spacing: .14em; text-transform: uppercase;
-  text-align: center; margin-top: 32px;
-}
 
 /* ---------- Lernen ---------- */
-.fortschritt-text { font-size: 12px; font-weight: 600; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
-.balken { height: 2px; background: var(--linie); margin: -18px 0 20px; }
-.balken div { height: 100%; width: 0; background: var(--akzent); transition: width .25s; }
-.frage-karte { border-left: 2px solid var(--akzent); }
-.stapel-name {
-  font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase;
-  color: var(--gedaempft); margin-bottom: 12px;
-}
-.frage { font-size: 21px; font-weight: 500; line-height: 1.32; letter-spacing: -.01em; }
+#ansicht-fertig, #ansicht-ergebnis { padding-top: 48px; }
+.fortschritt-text { font-size: 12px; font-weight: 600; letter-spacing: .12em; font-variant-numeric: tabular-nums; color: var(--gedaempft); }
+.lern-balken { margin: -49px 0 48px; }
+.frage { font-size: clamp(22px, 3.4vw, 28px); font-weight: 500; line-height: 1.3; letter-spacing: -.01em; margin-top: 12px; }
 .frage.lang { font-size: 17px; font-weight: 400; line-height: 1.5; letter-spacing: 0; }
-.frage em { display: block; font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--gedaempft); margin-bottom: 6px; }
-.antwort { margin-top: 10px; line-height: 1.55; }
-.antwort strong { font-weight: 600; }
-.antwort em { color: var(--gedaempft); font-size: 13px; }
-.frage p, .antwort p { margin: 0 0 9px; }
+.frage em { display: block; font-style: normal; font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--gedaempft); margin-bottom: 8px; }
+.frage p, .antwort p { margin: 0 0 8px; }
 .frage p:last-child, .antwort p:last-child { margin-bottom: 0; }
-code { font-family: var(--mono); background: var(--flaeche-2); border: 1px solid var(--linie-stark); padding: 0 4px; font-size: .88em; }
-.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
-
+#block-aufdecken { margin-top: 32px; }
 .urteil {
-  border: 1px solid var(--linie); border-left: 3px solid var(--linie-stark); background: var(--flaeche);
-  padding: 13px 15px; margin-bottom: 14px;
+  margin-top: 32px; padding: 12px 0 12px 16px; border-left: 3px solid var(--linie-stark);
   font-size: 12px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
 }
 .urteil.richtig { border-left-color: var(--gruen); color: var(--gruen); }
 .urteil.falsch { border-left-color: var(--akzent); color: var(--akzent-hell); }
-.urteil.neutral { border-left-color: var(--text); }
-.urteil small {
-  display: block; font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none;
-  color: var(--gedaempft); margin-top: 4px;
-}
-.treffer { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
-.chip { border: 1px solid var(--linie-stark); padding: 4px 9px; font-size: 13px; background: var(--flaeche); }
+.treffer { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip { border: 1px solid var(--linie-stark); padding: 4px 8px; font-size: 13px; }
 .chip.ja { border-color: var(--gruen); color: var(--gruen); }
 .chip.nein { color: var(--blass); text-decoration: line-through; }
-.antwort-karte { background: var(--flaeche); }
+.antwort-kopf { display: flex; justify-content: space-between; align-items: center; margin-top: 32px; padding-top: 4px; border-top: 1px solid var(--linie); }
+.antwort-kopf .leise { padding: 8px 0; min-height: 44px; font-size: 12px; }
+.antwort { line-height: 1.6; }
+.antwort strong { font-weight: 600; }
+.antwort em { color: var(--gedaempft); }
+code { font-family: var(--mono); background: var(--flaeche-2); border: 1px solid var(--linie-stark); padding: 0 4px; font-size: .88em; }
+pre { font-family: var(--mono); font-size: 13px; line-height: 1.5; background: var(--flaeche); border: 1px solid var(--linie); padding: 12px; margin: 0 0 8px; overflow-x: auto; white-space: pre; }
+pre code { background: none; border: none; padding: 0; font-size: inherit; }
+.frage ul, .frage ol, .antwort ul, .antwort ol { margin: 0 0 8px; padding-left: 20px; }
+.frage li, .antwort li { margin-bottom: 4px; }
+mark { background: rgba(227, 192, 74, .25); color: inherit; padding: 0 2px; }
+.katex-display { overflow-x: auto; overflow-y: hidden; padding: 4px 0; }
 
-/* ---------- Fertig ---------- */
-.fertig-karte { text-align: left; margin-top: 48px; border-top: 2px solid var(--akzent); }
-.fertig-karte .zahl { font-size: 96px; }
-.fertig-karte p { color: var(--gedaempft); }
-#fertig-serie {
-  margin-bottom: 20px; border: 1px solid var(--linie); border-top: 2px solid var(--gelb);
-  font-size: 12px; font-weight: 600; letter-spacing: .16em;
-}
+/* ---------- Ergebnis ---------- */
+.ergebnis-liste details { border-bottom: 1px solid var(--linie); padding: 16px 0; }
+.ergebnis-liste summary { cursor: pointer; font-size: 15px; line-height: 1.4; }
+.ergebnis-liste .antwort { font-size: 14px; color: var(--gedaempft); margin-top: 12px; }
 
 /* ---------- Meldungen ---------- */
 .laden {
@@ -241,51 +214,31 @@ code { font-family: var(--mono); background: var(--flaeche-2); border: 1px solid
   font-size: 11px; font-weight: 600; letter-spacing: .2em; z-index: 5;
 }
 .meldung {
-  position: fixed; left: 16px; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom));
-  background: var(--flaeche-2); color: var(--text); border: 1px solid var(--linie-stark);
-  border-left: 3px solid var(--akzent); padding: 13px 15px;
-  font-size: 14px; z-index: 6; max-width: 528px; margin: 0 auto;
+  position: fixed; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+  max-width: 528px; margin: 0 auto; z-index: 6;
+  background: var(--flaeche-2); border: 1px solid var(--linie-stark); border-left: 3px solid var(--akzent);
+  padding: 12px 16px; font-size: 14px;
 }
-
-/* ---------- Tagesziel, Klausur, Schwächen (27.11.2026) ---------- */
-.zahl .von { font-size: 22px; color: var(--gedaempft); letter-spacing: 0; margin-left: 2px; }
-.ziel-balken { height: 2px; background: var(--linie); margin-top: 10px; }
-.ziel-balken div { height: 100%; width: 0; background: var(--cyan); transition: width .25s; }
-.klausur-hinweis {
-  display: flex; flex-direction: column; gap: 3px; margin-bottom: 16px; padding: 12px 15px;
-  background: var(--flaeche); border: 1px solid var(--linie); border-left: 3px solid var(--akzent); font-size: 14px;
-}
-.klausur-hinweis .kachel-titel { color: var(--akzent-hell); }
-.offen-text { margin: -8px 0 16px; font-size: 12px; color: var(--gedaempft); text-align: center; }
-.knopf.gross:not(.haupt) { color: var(--text); }
-.kalender .tag.pause { border-color: var(--akzent); }
-.schwaechen { margin-left: 0; border-top: 1px solid var(--linie); }
-.schwaechen .stapel-zeile:first-child { font-weight: 400; }
-.stapel-zeile .block, .modul-kopf small {
-  display: block; font-size: 11px; font-weight: 400; letter-spacing: .02em; color: var(--gedaempft); margin-top: 2px;
-}
-.stapel-zeile .titel { display: block; }
-.klausur-zeile { background: rgba(232, 37, 59, .08); }
-.klausur-zeile .anzahl { border-color: var(--akzent); color: var(--akzent-hell); }
-.antwort-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.antwort-kopf .knopf.mini { padding: 5px 8px; }
-.ergebnis-liste details { border: 1px solid var(--linie); border-top: none; background: var(--flaeche); padding: 12px 14px; }
-.ergebnis-liste details:first-child { border-top: 1px solid var(--linie); }
-.ergebnis-liste summary { cursor: pointer; font-size: 14px; line-height: 1.4; }
-.ergebnis-liste .antwort { font-size: 14px; color: var(--gedaempft); }
-.ergebnis-liste { margin-bottom: 18px; }
 .offline {
   position: fixed; top: env(safe-area-inset-top); left: 0; right: 0; z-index: 7; text-align: center;
-  background: var(--flaeche-2); border-bottom: 1px solid var(--linie-stark); color: var(--gedaempft);
-  font-size: 10px; font-weight: 600; letter-spacing: .16em; padding: 5px 10px;
+  background: var(--bg); border-bottom: 1px solid var(--linie-stark); color: var(--gedaempft);
+  font-size: 10px; font-weight: 600; letter-spacing: .16em; padding: 4px 12px;
 }
 
-/* ---------- Code und Listen in Karten ---------- */
-pre {
-  font-family: var(--mono); font-size: 13px; line-height: 1.5; background: var(--bg);
-  border: 1px solid var(--linie-stark); padding: 10px 12px; margin: 0 0 9px; overflow-x: auto; white-space: pre;
+/* ---------- Mac: 12er-Raster, asymmetrisch ---------- */
+@media (min-width: 900px) {
+  #app { padding-left: 48px; padding-right: 48px; padding-top: 32px; }
+  .start-raster { display: grid; grid-template-columns: 7fr 5fr; }
+  .spalte-haupt { padding-right: 48px; }
+  .spalte-neben { border-left: 1px solid var(--linie); padding-left: 48px; }
+  .spalte-neben .abschnitt-kopf:first-child { margin-top: 0; }
+  .spalte-haupt > .label:first-child + .headline, .spalte-haupt > .headline:first-child { margin-top: 0; }
+  .aktionen { flex-direction: row; align-items: center; gap: 48px; }
+  .aktionen .textlink { align-self: auto; }
+  .arbeit { max-width: 640px; }
+  .knopf-reihe > .knopf { flex: 0 1 auto; padding-left: 24px; padding-right: 24px; }
+  #block-aufdecken .knopf.breit { width: auto; }
+  .kennzahl { padding-right: 24px; }
+  .kennzahl + .kennzahl { padding-left: 24px; }
 }
-pre code { background: none; border: none; padding: 0; font-size: inherit; }
-.frage ul, .frage ol, .antwort ul, .antwort ol { margin: 0 0 9px; padding-left: 20px; }
-.frage li, .antwort li { margin-bottom: 3px; }
-mark { background: rgba(227, 192, 74, .25); color: inherit; padding: 0 2px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

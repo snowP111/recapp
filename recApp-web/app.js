@@ -303,8 +303,8 @@
     const n = schlange().length;
     $("offline").hidden = !ja && n === 0;
     $("offline").textContent = ja
-      ? `OFFLINE · ${n > 0 ? n + " Änderungen warten" : "lernen geht trotzdem"}`
-      : `${n} Änderungen werden übertragen …`;
+      ? `OFFLINE${n > 0 ? ` · ${n} warten` : ""}`
+      : `${n} werden übertragen`;
   }
 
   // ---------- Hilfen für heute ----------
@@ -371,23 +371,23 @@
     const h = heuteIn(zustand.karten);
     const offen = h.faellig.length + h.neu.length;
     const e = heuteEintrag();
-    const geschafft = e.geschafft;
     const ziel = zustand.tagesziel;
     const gelernt = e.gelernt || 0;
+    const rest = Math.max(0, ziel - gelernt);
 
-    // Serie
+    // Headline = Lage des Tages
+    $("ziel-text").innerHTML = e.geschafft
+      ? (gelernt >= ziel ? 'Ziel <span class="rot">erreicht.</span>' : 'Alles <span class="rot">erledigt.</span>')
+      : `Noch <span class="rot">${rest}</span> ${rest === 1 ? "Karte" : "Karten"}.`;
+
+    // Kennzahlen
     $("serie-zahl").textContent = info.serie;
-    $("serie-text").textContent = geschafft
-      ? "Tage – heute geschafft"
-      : info.serie > 0 ? "Tage – heute noch offen" : "Tage am Stück";
-
-    // Tagesziel
+    $("serie-text").textContent = e.geschafft ? "heute geschafft" : info.serie === 1 ? "Tag" : "Tage";
     $("ziel-zahl").textContent = Math.min(gelernt, ziel);
     $("ziel-von").textContent = `/${ziel}`;
     $("ziel-balken").style.width = `${Math.min(100, (gelernt / ziel) * 100)}%`;
-    $("ziel-text").textContent = geschafft
-      ? (gelernt >= ziel ? "Ziel erreicht" : "Nichts mehr offen")
-      : `Noch ${ziel - gelernt} ${ziel - gelernt === 1 ? "Karte" : "Karten"}`;
+    $("offen-text").textContent = offen;
+    $("offen-neben").textContent = h.ueberfaellig ? `${h.ueberfaellig} überfällig` : offen ? `${h.neu.length} neu` : "";
 
     // Klausur-Countdown (nächste Klausur in den kommenden 60 Tagen)
     const naechste = [...zustand.module.entries()]
@@ -396,33 +396,21 @@
     $("klausur-hinweis").hidden = !naechste;
     if (naechste) {
       const d = L.tageBis(zustand.heute, naechste[1]);
-      $("klausur-hinweis").innerHTML = "";
-      const t = document.createElement("span");
-      t.className = "kachel-titel";
-      t.textContent = d === 0 ? "KLAUSUR HEUTE" : `KLAUSUR IN ${d} ${d === 1 ? "TAG" : "TAGEN"}`;
-      const n = document.createElement("span");
-      n.textContent = naechste[0] + (d <= L.KLAUSUR_VORLAUF ? " · kommt beim Lernen zuerst" : "");
-      $("klausur-hinweis").append(t, n);
+      $("klausur-hinweis").textContent = (d === 0 ? "Klausur heute" : `Klausur in ${d} ${d === 1 ? "Tag" : "Tagen"}`) + " · " + naechste[0];
     }
 
-    // Lernen
-    const runde = Math.min(RUNDE, offen);
-    $("lernen-start").textContent = offen > 0 ? `RUNDE STARTEN · ${runde} KARTEN` : "ALLES GESCHAFFT – TROTZDEM ÜBEN";
-    $("offen-text").textContent = offen > 0
-      ? `${offen} offen · ${h.faellig.length} fällig${h.ueberfaellig ? ` (${h.ueberfaellig} überfällig)` : ""} · ${h.neu.length} neu`
-      : "Heute ist nichts mehr fällig.";
-
+    // Eine Hauptaktion, Rest als Textlink
+    $("lernen-start").innerHTML = (offen > 0 ? "Runde starten" : "Trotzdem üben") + ' <span class="pfeil">→</span>';
     const schwierig = zustand.karten.filter((k) => L.istSchwierig(zustand.fortschritt.get(k.id)));
     $("schwierig-start").hidden = schwierig.length === 0;
-    $("schwierig-start").textContent = `SCHWIERIGE KARTEN · ${schwierig.length}`;
+    $("schwierig-start").textContent = `Schwierige Karten · ${schwierig.length}`;
 
     zeigeKalender(info.pausen);
     zeigeSchwaechen();
     zeigeModule();
 
     const w = L.woche(zustand.lerntage, zustand.heute);
-    $("bestand").textContent = `Woche: ${w.karten} Karten · ${Math.round(w.sekunden / 60)} min · `
-      + `${zustand.karten.length} Karten gesamt · ${L.sicherProzent(zustand.karten.filter((k) => !L.istPool(k)), zustand.fortschritt)} % sicher · längste Serie ${info.laengste}`;
+    $("bestand").textContent = `Woche ${w.karten} Karten · ${Math.round(w.sekunden / 60)} min · längste Serie ${info.laengste}`;
     zeige("start");
   }
 
@@ -434,13 +422,23 @@
       const e = zustand.lerntage.get(tag);
       const d = document.createElement("div");
       d.className = "tag" + (e?.geschafft ? " geschafft" : pausen.has(tag) ? " pause" : e?.gelernt ? " gelernt" : "") + (i === 0 ? " heute" : "");
-      d.title = tag + (e?.gelernt ? ` · ${e.gelernt} Karten` : "");
+      d.title = tag + (e?.gelernt ? ` · ${e.gelernt} Karten` : "") + (pausen.has(tag) ? " · Pause-Tag" : "");
       box.appendChild(d);
     }
-    const leg = document.createElement("div");
-    leg.className = "legende";
-    leg.textContent = "Letzte 4 Wochen · rot = geschafft · Rahmen = Pause-Tag · grau = gelernt";
-    box.appendChild(leg);
+  }
+
+  /** Eine Listenzeile: Titel, eine Zeile Nebeninfo, Wert rechts. */
+  function zeile(titel, neben, wert, klick, extra) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "zeile" + (extra ? " " + extra : "");
+    b.innerHTML = `<span><span class="titel"></span><span class="neben"></span></span><span class="wert"></span>`;
+    b.querySelector(".titel").textContent = titel;
+    b.querySelector(".neben").textContent = neben || "";
+    b.querySelector(".neben").hidden = !neben;
+    b.querySelector(".wert").textContent = wert;
+    b.addEventListener("click", klick);
+    return b;
   }
 
   function zeigeSchwaechen() {
@@ -453,15 +451,9 @@
       const st = zustand.stapel.get(s.stapel_id);
       if (!st) continue;
       const ks = zustand.karten.filter((k) => k.stapel_id === s.stapel_id);
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "stapel-zeile";
-      b.innerHTML = `<span><span class="klein-text block"></span><span class="titel"></span></span><span class="anzahl"></span>`;
-      b.querySelector(".block").textContent = st.modul.replace(/^Klausur-Pool\s*/, "Klausur-Pool · ");
-      b.querySelector(".titel").textContent = st.titel;
-      b.querySelector(".anzahl").textContent = `${Math.round(s.quote * 100)} % richtig`;
-      b.addEventListener("click", () => starteLernen(ks, st.titel, { alleUeben: true }));
-      box.appendChild(b);
+      const z = zeile(st.titel, st.modul, `${Math.round(s.quote * 100)} %`, () => starteLernen(ks, st.titel, { alleUeben: true }));
+      z.querySelector(".wert").classList.add("rot");
+      box.appendChild(z);
     }
   }
 
@@ -484,74 +476,57 @@
 
     module.forEach((modul) => {
       const pool = istPoolModul(modul);
+      const farbe = pool ? "rot" : MODULFARBEN[farbIndex++ % MODULFARBEN.length];
       const stapelListe = [...zustand.stapel.values()]
         .filter((s) => s.modul === modul)
         .sort((a, b) => a.reihenfolge - b.reihenfolge || a.titel.localeCompare(b.titel, "de"));
       const kartenModul = zustand.karten.filter((k) => modulVon(k) === modul);
       const hm = heuteIn(kartenModul);
-
-      const wrap = document.createElement("div");
-      wrap.className = "modul";
-      const kopf = document.createElement("button");
-      kopf.type = "button";
-      kopf.className = `knopf modul-kopf kachel ${pool ? "rot pool" : MODULFARBEN[farbIndex++ % MODULFARBEN.length]}`;
-      kopf.innerHTML = `<span class="name"></span><span class="anzahl"></span>`;
-      const anzeige = pool ? modul.replace(/^Klausur-Pool\s*/, "") : modul;
-      const name = kopf.querySelector(".name");
-      name.textContent = (zustand.offenModule.has(modul) ? "▾ " : "▸ ") + anzeige;
-      const unter = document.createElement("small");
       const t = klausurVon(modul);
       const d = t ? L.tageBis(zustand.heute, t) : null;
-      unter.textContent = `${L.sicherProzent(kartenModul, zustand.fortschritt)} % sicher`
+      const neben = (pool ? modul.replace(/^Klausur-Pool\s*/, "") + " · " : "") + `${L.sicherProzent(kartenModul, zustand.fortschritt)} % sicher`
         + (d !== null && d >= 0 ? ` · Klausur in ${d} ${d === 1 ? "Tag" : "Tagen"}` : "");
-      name.appendChild(unter);
-      setzeAnzahl(kopf.querySelector(".anzahl"), hm.faellig.length + hm.neu.length + hm.poolNeu.length, pool ? kartenModul.length : undefined);
-      kopf.addEventListener("click", () => {
-        zustand.offenModule.has(modul) ? zustand.offenModule.delete(modul) : zustand.offenModule.add(modul);
-        zeigeModule();
-      });
-      wrap.appendChild(kopf);
+      const offen = zustand.offenModule.has(modul);
 
-      if (zustand.offenModule.has(modul)) {
+      const kopf = zeile(pool ? "Klausur-Pool" : modul, neben, "", () => {
+        offen ? zustand.offenModule.delete(modul) : zustand.offenModule.add(modul);
+        zeigeModule();
+      }, "modul" + (pool ? " pool" : "") + (offen ? " offen" : ""));
+      const q = document.createElement("span");
+      q.className = "quadrat " + farbe;
+      kopf.querySelector(".titel").prepend(q);
+      kopf.setAttribute("aria-expanded", String(offen));
+      setzeAnzahl(kopf.querySelector(".wert"), hm.faellig.length + hm.neu.length + hm.poolNeu.length, pool ? kartenModul.length : undefined);
+      box.appendChild(kopf);
+
+      if (offen) {
         const liste = document.createElement("div");
-        liste.className = "stapel-liste";
+        liste.className = "unterliste";
         if (pool) liste.appendChild(klausurZeile(modul, kartenModul));
         liste.appendChild(stapelZeile(pool ? `Alle ${kartenModul.length} zusammen` : "Ganzes Modul", kartenModul, modul));
         for (const s of stapelListe) {
           const ks = zustand.karten.filter((k) => k.stapel_id === s.id);
           liste.appendChild(stapelZeile(s.titel, ks, s.titel));
         }
-        wrap.appendChild(liste);
+        box.appendChild(liste);
       }
-      box.appendChild(wrap);
     });
   }
 
   function stapelZeile(titel, karten, sitzungsTitel) {
     const h = heuteIn(karten);
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "stapel-zeile";
-    b.innerHTML = `<span><span class="titel"></span><span class="klein-text block"></span></span><span class="anzahl"></span>`;
-    b.querySelector(".titel").textContent = titel;
-    b.querySelector(".block").textContent = `${L.sicherProzent(karten, zustand.fortschritt)} % sicher`;
-    setzeAnzahl(b.querySelector(".anzahl"), h.faellig.length + h.neu.length + h.poolNeu.length, karten.length);
-    b.addEventListener("click", () => starteLernen(karten, sitzungsTitel));
-    return b;
+    const z = zeile(titel, `${L.sicherProzent(karten, zustand.fortschritt)} % sicher`, "", () => starteLernen(karten, sitzungsTitel));
+    setzeAnzahl(z.querySelector(".wert"), h.faellig.length + h.neu.length + h.poolNeu.length, karten.length);
+    return z;
   }
 
   /** Zeile „Klausur simulieren“ mit den letzten Ergebnissen. */
   function klausurZeile(modul, karten) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "stapel-zeile klausur-zeile";
     const letzte = zustand.pruefungen.filter((p) => p.modul === modul).slice(0, 4).reverse();
     const verlauf = letzte.map((p) => L.pruefungsProzent(p.gewusst, p.unsicher, p.fragen) + " %").join(" → ");
-    b.innerHTML = `<span><span class="titel"></span><span class="klein-text block"></span></span><span class="anzahl">START</span>`;
-    b.querySelector(".titel").textContent = `Klausur simulieren · ${Math.min(KLAUSUR_FRAGEN, karten.length)} Fragen`;
-    b.querySelector(".block").textContent = verlauf ? `Bisher: ${verlauf}` : "Zufällige Fragen, Ergebnis am Ende";
-    b.addEventListener("click", () => starteKlausur(modul, karten));
-    return b;
+    const z = zeile(`Klausur simulieren · ${Math.min(KLAUSUR_FRAGEN, karten.length)} Fragen`, verlauf ? `Zuletzt ${verlauf}` : "", "→", () => starteKlausur(modul, karten), "klausur-zeile");
+    z.querySelector(".wert").classList.add("rot");
+    return z;
   }
 
   function setzeAnzahl(el, offen, gesamt) {
@@ -692,18 +667,9 @@
     $("block-ergebnis").hidden = false;
 
     const urteil = $("urteil");
-    const texte = {
-      richtig: ["RICHTIG", "Alle Schlüsselwörter gefunden."],
-      falsch: ["NOCH NICHT", "Es fehlen Schlüsselwörter – vergleiche mit der Musterantwort."],
-      weissnicht: ["KEIN PROBLEM", "Lies die Antwort in Ruhe – die Karte kommt gleich noch einmal."],
-      selbst: ["WIE WAR'S?", "Vergleiche mit deiner Antwort im Kopf und bewerte ehrlich."],
-    };
+    const texte = { richtig: "Richtig", falsch: "Noch nicht", weissnicht: "Kommt gleich noch einmal", selbst: "Gewusst?" };
     urteil.className = "urteil " + (art === "richtig" ? "richtig" : art === "selbst" ? "neutral" : "falsch");
-    urteil.innerHTML = "";
-    urteil.append(texte[art][0]);
-    const klein = document.createElement("small");
-    klein.textContent = texte[art][1];
-    urteil.appendChild(klein);
+    urteil.textContent = texte[art];
 
     const box = $("treffer");
     box.innerHTML = "";
@@ -820,14 +786,14 @@
     const quote = Math.round((s.richtig / s.gelernt) * 100);
     const min = Math.max(1, Math.round(s.sekunden / 60));
     $("fertig-zahl").textContent = s.gelernt;
-    $("fertig-text").textContent = `${s.gelernt === 1 ? "Karte" : "Karten"} in „${s.titel}“ · ${quote} % beim ersten Versuch richtig · ${min} min`;
+    $("fertig-text").textContent = `${quote} % beim ersten Versuch · ${min} min · ${s.titel}`;
 
     const info = L.serienInfo(zustand.lerntage, zustand.heute);
     const e = heuteEintrag();
     const rest = zustand.tagesziel - (e.gelernt || 0);
     $("fertig-serie").textContent = e.geschafft
-      ? `SERIE: ${info.serie} ${info.serie === 1 ? "TAG" : "TAGE"} – HEUTE GESCHAFFT`
-      : `NOCH ${rest} ${rest === 1 ? "KARTE" : "KARTEN"} BIS ZUM TAGESZIEL`;
+      ? `Serie ${info.serie} · heute geschafft`
+      : `Noch ${rest} bis zum Tagesziel`;
 
     // Gibt es in derselben Auswahl noch etwas? Dann „nächste Runde“ anbieten
     let weiter = 0;
@@ -836,7 +802,8 @@
       weiter = s.quelle.optionen && s.quelle.optionen.alleUeben ? plan.length + uebung.length : plan.length;
     }
     $("fertig-weiter").hidden = weiter === 0;
-    $("fertig-weiter").textContent = `NÄCHSTE RUNDE · ${Math.min(RUNDE, weiter)} KARTEN`;
+    $("fertig-weiter").innerHTML = `Nächste Runde · ${Math.min(RUNDE, weiter)} <span class="pfeil">→</span>`;
+    $("fertig-zurueck").className = weiter === 0 ? "knopf haupt" : "textlink";   // immer genau eine Hauptaktion
     zustand.letzteQuelle = s.quelle;
     zustand.sitzung = null;
     zeige("fertig");
@@ -863,7 +830,7 @@
     const vorher = zustand.pruefungen.filter((p) => p.modul === k.modul)[1];
     $("ergebnis-vergleich").textContent = vorher
       ? `Letztes Mal: ${L.pruefungsProzent(vorher.gewusst, vorher.unsicher, vorher.fragen)} %`
-      : "Erste Simulation – ab jetzt siehst du die Entwicklung.";
+      : "";
 
     const liste = $("ergebnis-liste");
     liste.innerHTML = "";
@@ -872,7 +839,8 @@
       if (!karte) continue;
       const d = document.createElement("details");
       const sum = document.createElement("summary");
-      sum.textContent = karte.frage.replace(/[*_`]|\$+/g, "").replace(/\s+/g, " ").trim().slice(0, 140);
+      const kurz = karte.frage.replace(/[*_`]|\$+/g, "").replace(/\s+/g, " ").trim();
+      sum.textContent = kurz.length > 160 ? kurz.slice(0, 160).replace(/\s+\S*$/, "") + " …" : kurz;
       const a = document.createElement("div");
       a.className = "antwort";
       schreibeMarkdown(a, karte.antwort);
@@ -881,6 +849,7 @@
     }
     $("ergebnis-liste-titel").hidden = k.falsch.length === 0;
     $("ergebnis-ueben").hidden = k.falsch.length === 0;
+    $("ergebnis-zurueck").className = k.falsch.length === 0 ? "knopf haupt" : "textlink";
     zustand.letzteKlausurFalsch = k.falsch;
     zustand.sitzung = null;
     zeige("ergebnis");
