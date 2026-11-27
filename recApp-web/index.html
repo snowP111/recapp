@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap">
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
   <main id="app">
@@ -48,15 +48,23 @@
           <div class="klein-text" id="serie-text">Tage am Stück</div>
         </div>
         <div class="kachel cyan">
-          <div class="kachel-titel">HEUTE</div>
-          <div class="zahl" id="heute-zahl">0</div>
-          <div class="klein-text" id="heute-text">Karten offen</div>
+          <div class="kachel-titel">TAGESZIEL</div>
+          <div class="zahl"><span id="ziel-zahl">0</span><span class="von" id="ziel-von">/20</span></div>
+          <div class="ziel-balken"><div id="ziel-balken"></div></div>
+          <div class="klein-text" id="ziel-text">Noch 20 Karten</div>
         </div>
       </div>
 
+      <div id="klausur-hinweis" class="klausur-hinweis" hidden></div>
+
+      <button id="lernen-start" class="knopf haupt gross" type="button">RUNDE STARTEN</button>
+      <p class="offen-text" id="offen-text"></p>
+      <button id="schwierig-start" class="knopf gross" type="button" hidden>SCHWIERIGE KARTEN</button>
+
       <div class="kalender karte" id="kalender"></div>
 
-      <button id="alles-lernen" class="knopf haupt gross" type="button">ALLES LERNEN</button>
+      <h2 class="abschnitt" id="schwaechen-titel" hidden>SCHWÄCHEN</h2>
+      <div id="schwaechen" class="stapel-liste schwaechen" hidden></div>
 
       <h2 class="abschnitt">TEILBEREICH WÄHLEN</h2>
       <div id="module"></div>
@@ -96,7 +104,10 @@
         <div id="urteil" class="urteil"></div>
         <div id="treffer" class="treffer"></div>
         <div class="karte antwort-karte">
-          <div class="kachel-titel">MUSTERANTWORT</div>
+          <div class="antwort-kopf">
+            <div class="kachel-titel">MUSTERANTWORT</div>
+            <button id="melden" class="knopf mini" type="button">MELDEN</button>
+          </div>
           <div class="antwort" id="karte-antwort"></div>
         </div>
         <div class="knopf-reihe" id="reihe-getippt">
@@ -119,18 +130,34 @@
         <p id="fertig-text"></p>
       </div>
       <div id="fertig-serie" class="kachel gelb serie"></div>
-      <button id="fertig-zurueck" class="knopf haupt gross" type="button">ZUR ÜBERSICHT</button>
+      <button id="fertig-weiter" class="knopf haupt gross" type="button" hidden>NÄCHSTE RUNDE</button>
+      <button id="fertig-zurueck" class="knopf gross" type="button">ZUR ÜBERSICHT</button>
+    </section>
+
+    <!-- KLAUSUR-ERGEBNIS -->
+    <section id="ansicht-ergebnis" class="ansicht" hidden>
+      <div class="karte fertig-karte">
+        <div class="kachel-titel">KLAUSUR-SIMULATION</div>
+        <div class="zahl"><span id="ergebnis-zahl">0</span><span class="von">%</span></div>
+        <p id="ergebnis-text"></p>
+        <p id="ergebnis-vergleich" class="klein-text"></p>
+      </div>
+      <h2 class="abschnitt" id="ergebnis-liste-titel">NICHT GEWUSST</h2>
+      <div id="ergebnis-liste" class="ergebnis-liste"></div>
+      <button id="ergebnis-ueben" class="knopf haupt gross" type="button">NICHT GEWUSSTE ÜBEN</button>
+      <button id="ergebnis-zurueck" class="knopf gross" type="button">ZUR ÜBERSICHT</button>
     </section>
 
     <div id="laden" class="laden">LADE …</div>
     <div id="meldung" class="meldung" hidden></div>
+    <div id="offline" class="offline" hidden></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.1"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
   <script src="config.js"></script>
-  <script src="logik.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="logik.js?v=3"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
