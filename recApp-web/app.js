@@ -9,6 +9,8 @@
   const KLAUSUR_FRAGEN = 20;                // Fragen im Klausur-Modus
   const CACHE_DATEN = "recapp-daten";       // zuletzt geladener Stand (für offline)
   const CACHE_SCHLANGE = "recapp-schlange"; // Änderungen, die noch zu Supabase müssen
+  const CACHE_SKRIPTE = "recapp-skripte";   // Skripte zum Nachschlagen (offline)
+  const VORTRAEGE = "recapp-vortraege";     // wann welches Thema vorgetragen wurde (nur dieses Gerät)
 
   const zustand = {
     db: null,
@@ -26,6 +28,10 @@
     offenModule: new Set(),
     sitzung: null,
     offline: false,
+    modulFarbe: new Map(),    // Modul → Kennfarbe (wie auf der Startseite)
+    skripte: null,            // stapel_id → Text (null = noch nicht geladen)
+    offenVortrag: new Set(),
+    vortrag: null,            // laufender Vortrag (Reiter „Vortragen“)
   };
 
   // ==========================================
@@ -53,7 +59,8 @@
     window.addEventListener("online", () => abarbeiten());
     document.addEventListener("visibilitychange", () => {
       // App kommt aus dem Hintergrund: neuer Tag? Dann Startseite neu aufbauen
-      if (document.visibilityState === "visible" && !zustand.sitzung && zustand.heute && zustand.heute !== L.datum(new Date())) {
+      if (document.visibilityState === "visible") behalteBildschirmAn();
+      if (document.visibilityState === "visible" && !zustand.sitzung && !zustand.vortrag && zustand.heute && zustand.heute !== L.datum(new Date())) {
         ladeUndZeigeStart();
       }
     });
@@ -93,6 +100,14 @@
     $("fertig-zurueck").addEventListener("click", () => ladeUndZeigeStart());
     $("ergebnis-ueben").addEventListener("click", uebeFalscheAusKlausur);
     $("ergebnis-zurueck").addEventListener("click", () => ladeUndZeigeStart());
+    for (const b of document.querySelectorAll("#reiter button")) {
+      b.addEventListener("click", () => (b.dataset.ziel === "vortraege" ? zeigeVortraege() : zeigeStart()));
+    }
+    $("vortrag-zurueck").addEventListener("click", () => { beendeVortrag(false); zeigeVortraege(); });
+    $("vortrag-knopf").addEventListener("click", vortragKnopf);
+    $("skript-oeffnen").addEventListener("click", oeffneSkript);
+    $("skript-zurueck").addEventListener("click", schliesseSkript);
+    $("buehne").addEventListener("click", () => zustand.vortrag && reagiere(L.ANSTUPSEN, true));
     $("antwort-eingabe").addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) pruefe();
     });
@@ -123,7 +138,9 @@
     try {
       localStorage.removeItem(CACHE_DATEN);
       localStorage.removeItem(CACHE_SCHLANGE);
+      localStorage.removeItem(CACHE_SKRIPTE);
     } catch (e) { /* egal */ }
+    zustand.skripte = null;
     zeige("login");
   }
 
@@ -477,6 +494,7 @@
     module.forEach((modul) => {
       const pool = istPoolModul(modul);
       const farbe = pool ? "rot" : MODULFARBEN[farbIndex++ % MODULFARBEN.length];
+      zustand.modulFarbe.set(modul, farbe);
       const stapelListe = [...zustand.stapel.values()]
         .filter((s) => s.modul === modul)
         .sort((a, b) => a.reihenfolge - b.reihenfolge || a.titel.localeCompare(b.titel, "de"));
@@ -861,12 +879,329 @@
   }
 
   // ==========================================
+  // VORTRAGEN (Reiter nur auf dem iPhone)
+  // Lauscher hört nicht wirklich zu: Er reagiert in zufälligen Abständen mit einer zufälligen
+  // Reaktion – das reicht, damit es sich anfühlt, als würde jemand zuhören (Placebo).
+  // ==========================================
+
+  function zeigeVortraege() {
+    if (!$("lauscher-klein").firstElementChild) {
+      $("lauscher-klein").appendChild($("lauscher-vorlage").content.firstElementChild.cloneNode(true));
+    }
+    zeigeVortragsModule();
+    zeige("vortraege");
+    ladeSkripte();                                  // im Hintergrund, fürs Nachschlagen
+  }
+
+  function vortraege() {
+    try {
+      return JSON.parse(localStorage.getItem(VORTRAEGE) || "{}");
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function zeigeVortragsModule() {
+    const box = $("vortrag-module");
+    box.innerHTML = "";
+    const v = vortraege();
+    const module = [...new Set([...zustand.stapel.values()].map((s) => s.modul))]
+      .filter((m) => !istPoolModul(m))
+      .sort((a, b) => a.localeCompare(b, "de"));
+    if (!module.length) {
+      box.innerHTML = '<p class="neben gross">Noch keine Themen – erst in recApp Sync hochladen.</p>';
+      return;
+    }
+    for (const modul of module) {
+      const stapelListe = [...zustand.stapel.values()]
+        .filter((s) => s.modul === modul)
+        .sort((a, b) => a.reihenfolge - b.reihenfolge || a.titel.localeCompare(b.titel, "de"));
+      const offen = zustand.offenVortrag.has(modul);
+      const erledigt = stapelListe.filter((s) => v[s.id]).length;
+      const kopf = zeile(modul, `${erledigt} von ${stapelListe.length} vorgetragen`, "", () => {
+        offen ? zustand.offenVortrag.delete(modul) : zustand.offenVortrag.add(modul);
+        zeigeVortragsModule();
+      }, "modul" + (offen ? " offen" : ""));
+      const q = document.createElement("span");
+      q.className = "quadrat " + (zustand.modulFarbe.get(modul) || "");
+      kopf.querySelector(".titel").prepend(q);
+      kopf.setAttribute("aria-expanded", String(offen));
+      box.appendChild(kopf);
+      if (!offen) continue;
+      const liste = document.createElement("div");
+      liste.className = "unterliste";
+      for (const s of stapelListe) {
+        const e = v[s.id];
+        const neben = e ? `${L.seitText(e.tag, L.datum(new Date()))} · ${L.dauerText(e.sekunden)} min` : "noch nicht vorgetragen";
+        liste.appendChild(zeile(s.titel, neben, "→", () => starteVortrag(s)));
+      }
+      box.appendChild(liste);
+    }
+  }
+
+  // ---------- Skripte laden (Supabase-Tabelle „skripte“, offline aus dem Speicher) ----------
+
+  let skripteLaden = null;
+  function ladeSkripte() {
+    if (zustand.skripte && !zustand.skripteAlt) return Promise.resolve();
+    if (!zustand.skripte) {
+      try {
+        const d = JSON.parse(localStorage.getItem(CACHE_SKRIPTE) || "null");
+        if (d) {
+          zustand.skripte = new Map(d);
+          zustand.skripteAlt = true;             // gleich trotzdem frisch laden
+        }
+      } catch (e) { /* ohne Speicher */ }
+    }
+    if (!skripteLaden) {
+      skripteLaden = (async () => {
+        try {
+          const { data, error } = await zustand.db.from("skripte").select("stapel_id, text").range(0, 9999);
+          if (error) throw error;
+          zustand.skripte = new Map(data.map((r) => [r.stapel_id, r.text]));
+          zustand.skripteAlt = false;
+          try {
+            localStorage.setItem(CACHE_SKRIPTE, JSON.stringify([...zustand.skripte]));
+          } catch (e) { /* Speicher voll – dann nur online */ }
+        } catch (e) {
+          if (!zustand.skripte) zustand.skripte = new Map();   // Tabelle fehlt oder offline: Lernkarten als Ersatz
+        } finally {
+          skripteLaden = null;
+        }
+      })();
+    }
+    return skripteLaden;
+  }
+
+  // ---------- Vortrag ----------
+
+  function starteVortrag(stapel) {
+    const buehne = $("buehne");
+    if (!buehne.firstElementChild) buehne.appendChild($("lauscher-vorlage").content.firstElementChild.cloneNode(true));
+    zustand.vortrag = { stapel, phase: "bereit", start: 0, sekunden: 0, letzte: null, timer: [], uhr: null, sperre: null };
+    $("vortrag-modul").textContent = stapel.modul;
+    $("vortrag-titel").textContent = stapel.titel;
+    $("vortrag-zeit").textContent = "0:00";
+    $("vortrag-zeit").classList.remove("laeuft");
+    setzeVortragsKnopf("Loslegen", true);
+    $("skript-oeffnen").hidden = false;
+    lauscher().setAttribute("class", "lauscher");
+    sage("Ich bin ganz Ohr.");
+    zeige("vortrag");
+    lebe();
+  }
+
+  function setzeVortragsKnopf(text, pfeil) {
+    $("vortrag-knopf").innerHTML = text + (pfeil ? ' <span class="pfeil">→</span>' : "");
+  }
+
+  function vortragKnopf() {
+    const v = zustand.vortrag;
+    if (!v) return;
+    if (v.phase === "bereit") {
+      v.phase = "laeuft";
+      v.start = Date.now();
+      setzeVortragsKnopf("Fertig", false);
+      $("vortrag-zeit").classList.add("laeuft");
+      v.uhr = setInterval(zeigeZeit, 500);
+      behalteBildschirmAn();
+      sage("");
+      reagiere({ ...L.REAKTIONEN[0], text: "" }, false);   // kurz nicken: „los geht's“
+      planeReaktion(4000 + Math.random() * 2000);
+    } else if (v.phase === "laeuft") {
+      beendeVortrag(true);
+    } else {
+      starteVortrag(v.stapel);                             // „Noch einmal“
+    }
+  }
+
+  function zeigeZeit() {
+    const v = zustand.vortrag;
+    if (!v || v.phase !== "laeuft") return;
+    const t = L.dauerText((Date.now() - v.start) / 1000);
+    $("vortrag-zeit").textContent = t;
+    $("skript-zeit").textContent = t;
+  }
+
+  /** Nächste Zufallsreaktion einplanen – nur während des Vortrags und solange Lauscher zu sehen ist. */
+  function planeReaktion(ms) {
+    const v = zustand.vortrag;
+    if (!v) return;
+    clearTimeout(v.reaktion);
+    v.reaktion = setTimeout(() => {
+      if (!zustand.vortrag || v.phase !== "laeuft") return;
+      if ($("ansicht-vortrag").hidden) return planeReaktion(1500);
+      const r = L.naechsteReaktion(v.letzte);
+      v.letzte = r.name;
+      reagiere(r, true);
+      planeReaktion(r.dauer + r.pause);
+    }, ms);
+  }
+
+  /** Spielt eine Reaktion ab (Klassen am SVG) und zeigt ggf. einen kurzen Satz. */
+  function reagiere(r, mitText) {
+    const svg = lauscher();
+    if (!svg) return;
+    const v = zustand.vortrag;
+    clearTimeout(v && v.reaktionEnde);
+    svg.setAttribute("class", "lauscher");
+    void svg.getBoundingClientRect();                    // Animation neu starten
+    svg.setAttribute("class", ("lauscher " + r.klassen).trim());
+    if (r.name === "blick" || r.name === "nachdenken") schaue(r.name === "nachdenken" ? -4 : null, r.name === "nachdenken" ? -5 : null);
+    const text = mitText ? (r.text !== undefined ? r.text : r.texte[Math.floor(Math.random() * r.texte.length)]) : "";
+    if (text) sage(text, r.dauer + 1400);
+    const ende = setTimeout(() => {
+      if (lauscher() === svg) svg.setAttribute("class", "lauscher");
+      if (r.name === "nachdenken") schaue(0, 0);
+    }, r.dauer);
+    if (v) v.reaktionEnde = ende;
+  }
+
+  let textTimer = null;
+  function sage(text, dauer) {
+    const el = $("lauscher-text");
+    clearTimeout(textTimer);
+    if (!text) {
+      el.classList.remove("zeigen");
+      return;
+    }
+    el.textContent = text;
+    el.classList.add("zeigen");
+    if (dauer) textTimer = setTimeout(() => el.classList.remove("zeigen"), dauer);
+  }
+
+  function lauscher() {
+    return $("buehne").querySelector(".lauscher");
+  }
+
+  /** Augen bewegen (ohne Angabe: zufällig ein Stück) */
+  function schaue(x, y) {
+    const svg = lauscher();
+    if (!svg) return;
+    const zx = x === null || x === undefined ? Math.round((Math.random() * 2 - 1) * 4) : x;
+    const zy = y === null || y === undefined ? Math.round((Math.random() * 2 - 1) * 2) : y;
+    svg.style.setProperty("--bx", zx + "px");
+    svg.style.setProperty("--by", zy + "px");
+  }
+
+  /** Blinzeln und Umherschauen laufen immer (auch vor dem Start) – Lauscher soll lebendig wirken. */
+  function lebe() {
+    const v = zustand.vortrag;
+    if (!v) return;
+    const blinzeln = () => {
+      if (zustand.vortrag !== v) return;
+      const svg = lauscher();
+      svg.classList.add("blinzeln");
+      setTimeout(() => svg.classList.remove("blinzeln"), 140);
+      v.timer.push(setTimeout(blinzeln, 2500 + Math.random() * 3500));
+    };
+    const umsehen = () => {
+      if (zustand.vortrag !== v) return;
+      if (!/r-nachdenken/.test(lauscher().getAttribute("class"))) schaue(Math.random() < 0.4 ? 0 : null, Math.random() < 0.4 ? 0 : null);
+      v.timer.push(setTimeout(umsehen, 2000 + Math.random() * 3000));
+    };
+    v.timer.push(setTimeout(blinzeln, 1200), setTimeout(umsehen, 1800));
+  }
+
+  /** fertig = true: Zeit merken und jubeln; false: abbrechen (ab 30 s wird trotzdem gemerkt). */
+  function beendeVortrag(fertig) {
+    const v = zustand.vortrag;
+    if (!v) return;
+    clearInterval(v.uhr);
+    clearTimeout(v.reaktion);
+    lasseBildschirmLos();
+    const sekunden = v.phase === "laeuft" ? Math.round((Date.now() - v.start) / 1000) : 0;
+    if (sekunden >= 30 || (fertig && sekunden > 0)) {
+      const alle = vortraege();
+      alle[v.stapel.id] = { tag: L.datum(new Date()), sekunden };
+      try {
+        localStorage.setItem(VORTRAEGE, JSON.stringify(alle));
+      } catch (e) { /* egal */ }
+    }
+    if (!fertig) {
+      v.timer.forEach(clearTimeout);
+      clearTimeout(v.reaktionEnde);
+      sage("");
+      zustand.vortrag = null;
+      return;
+    }
+    v.phase = "ende";
+    $("vortrag-zeit").textContent = L.dauerText(sekunden);
+    $("vortrag-zeit").classList.remove("laeuft");
+    reagiere(L.JUBELN, true);
+    sage(`Gut erklärt. ${L.dauerText(sekunden)} min.`);
+    setzeVortragsKnopf("Noch einmal", true);
+    $("skript-oeffnen").hidden = true;
+  }
+
+  // ---------- Skript ----------
+
+  async function oeffneSkript() {
+    const v = zustand.vortrag;
+    if (!v) return;
+    $("skript-label").textContent = v.stapel.modul;
+    $("skript-zeit").textContent = v.phase === "laeuft" ? $("vortrag-zeit").textContent : "";
+    const box = $("skript-inhalt");
+    box.innerHTML = '<p class="neben gross">Lade …</p>';
+    zeige("skript");
+    window.scrollTo(0, 0);
+    await ladeSkripte();
+    if (zustand.vortrag !== v || $("ansicht-skript").hidden) return;
+    const text = zustand.skripte && zustand.skripte.get(v.stapel.id);
+    if (text) {
+      schreibeMarkdown(box, text, { skript: true });
+      return;
+    }
+    // Ersatz: die Lernkarten des Themas als Spickzettel
+    box.innerHTML = `<h2></h2><p class="neben gross">Kein Skript hochgeladen – hier die Lernkarten.</p>`;
+    box.querySelector("h2").textContent = v.stapel.titel;
+    for (const k of zustand.karten.filter((x) => x.stapel_id === v.stapel.id)) {
+      const d = document.createElement("div");
+      d.className = "skript-karte";
+      d.innerHTML = '<div class="frage-klein"></div><div class="antwort"></div>';
+      schreibeMarkdown(d.firstChild, k.frage);
+      schreibeMarkdown(d.lastChild, k.antwort);
+      box.appendChild(d);
+    }
+  }
+
+  function schliesseSkript() {
+    const v = zustand.vortrag;
+    if (!v) return zeigeVortraege();
+    zeige("vortrag");
+    window.scrollTo(0, 0);
+    if (v.phase === "laeuft") reagiere({ ...L.REAKTIONEN[1], text: "Weiter geht's." }, true);
+  }
+
+  // ---------- Bildschirm während des Vortrags anlassen ----------
+
+  async function behalteBildschirmAn() {
+    const v = zustand.vortrag;
+    if (!v || v.phase !== "laeuft" || !("wakeLock" in navigator)) return;
+    try {
+      v.sperre = await navigator.wakeLock.request("screen");
+    } catch (e) { /* nicht erlaubt – egal */ }
+  }
+
+  function lasseBildschirmLos() {
+    const v = zustand.vortrag;
+    if (v && v.sperre) v.sperre.release().catch(() => {});
+    if (v) v.sperre = null;
+  }
+
+  // ==========================================
   // HILFEN
   // ==========================================
 
   function zeige(name) {
     for (const v of document.querySelectorAll(".ansicht")) v.hidden = v.id !== "ansicht-" + name;
     $("laden").hidden = true;
+    // Reiter-Leiste nur auf den beiden Übersichten (und per CSS nur auf dem iPhone)
+    const mitReiter = name === "start" || name === "vortraege";
+    $("reiter").hidden = !mitReiter;
+    $("app").classList.toggle("mit-reiter", mitReiter);
+    for (const b of document.querySelectorAll("#reiter button")) b.classList.toggle("aktiv", b.dataset.ziel === name);
+    if (mitReiter) window.scrollTo(0, 0);
   }
 
   let meldungTimer = null;
@@ -892,8 +1227,8 @@
     return a;
   }
 
-  function schreibeMarkdown(el, text) {
-    el.innerHTML = L.markdown(text);
+  function schreibeMarkdown(el, text, optionen) {
+    el.innerHTML = L.markdown(text, optionen);
     if (window.renderMathInElement) {
       window.renderMathInElement(el, {
         delimiters: [

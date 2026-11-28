@@ -132,4 +132,41 @@ test("Markdown: Listen, Codeblöcke, Inline-Code, Formeln, kein HTML", () => {
   assert.equal(L.markdown("[[Notiz|Text]] und [[Begriff]]"), "<p>Text und Begriff</p>");
 });
 
+test("Markdown fürs Skript: Überschriften, Tabelle, Callout, Bilder, Anker", () => {
+  const h = L.markdown("# VL 1\n## Kernaussagen\n| A | B |\n|---|---|\n| **x** | y |\n\n> [!example] Fallstudien\n> Text mit [[Notiz#Abschnitt|Link]]\n\n![[bild.png|700]]\n---\n[[Notiz#Anker]]", { skript: true });
+  assert.equal(h, '<h2>VL 1</h2><h3>Kernaussagen</h3><div class="tabelle"><table><thead><tr><th>A</th><th>B</th></tr></thead><tbody><tr><td><strong>x</strong></td><td>y</td></tr></tbody></table></div>'
+    + '<div class="hinweis"><div class="label">Fallstudien</div><p>Text mit Link</p></div><hr><p>Notiz</p>');
+  // ohne Skript-Modus bleibt alles wie bisher
+  assert.equal(L.markdown("## Titel"), "<p>## Titel</p>");
+  assert.equal(L.markdown("> [!info]- Zu\n> - a\n> - b", { skript: true }), '<div class="hinweis"><div class="label">Zu</div><ul><li>a</li><li>b</li></ul></div>');
+  assert.equal(L.markdown("| a \\| b | c |\n|--|--|", { skript: true }), '<div class="tabelle"><table><thead><tr><th>a | b</th><th>c</th></tr></thead><tbody></tbody></table></div>');
+});
+
+test("Vortragen: Reaktionen zufällig, nie zweimal gleich, Pausen im Rahmen", () => {
+  let x = 0;
+  const folge = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; };
+  let letzte = null;
+  const gesehen = new Set();
+  for (let i = 0; i < 400; i++) {
+    const r = L.naechsteReaktion(letzte, folge);
+    assert.notEqual(r.name, letzte);
+    assert.ok(r.pause >= L.PAUSE_MIN && r.pause <= L.PAUSE_MAX);
+    assert.ok(r.text === "" || r.texte.includes(r.text));
+    gesehen.add(r.name);
+    letzte = r.name;
+  }
+  assert.equal(gesehen.size, L.REAKTIONEN.length);
+  assert.equal(L.naechsteReaktion("nicken", () => 0).name, "lauschen");
+  assert.equal(L.naechsteReaktion(null, () => 0.999).name, "blick");
+});
+
+test("Vortragen: Dauer und Datum als Text", () => {
+  assert.equal(L.dauerText(0), "0:00");
+  assert.equal(L.dauerText(272), "4:32");
+  assert.equal(L.dauerText(3725), "1:02:05");
+  assert.equal(L.seitText("2026-11-28", "2026-11-28"), "heute");
+  assert.equal(L.seitText("2026-11-27", "2026-11-28"), "gestern");
+  assert.equal(L.seitText("2026-11-20", "2026-11-28"), "vor 8 Tagen");
+});
+
 console.log(`\n${n} Tests bestanden.`);

@@ -1,9 +1,9 @@
 /* recApp – Service Worker: App offline verfügbar machen.
    App-Dateien: zuerst Netz (damit Updates sofort ankommen), sonst Cache.
    Bibliotheken und Schriften (CDN): zuerst Cache. Supabase-Anfragen laufen nie über den Cache. */
-const CACHE = "recapp-v4";
+const CACHE = "recapp-v5";
 const APP = [
-  "./", "index.html", "style.css?v=4", "logik.js?v=4", "app.js?v=4", "config.js", "manifest.webmanifest",
+  "./", "index.html", "style.css?v=5", "logik.js?v=5", "app.js?v=5", "config.js", "manifest.webmanifest",
   "icons/icon-192.png?v=2", "icons/apple-touch-icon.png?v=2",
 ];
 const CDN = [

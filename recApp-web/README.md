@@ -6,7 +6,7 @@ Die Karten kommen über **recApp Sync** (Java-Projekt `recApp`) nach Supabase.
 ## Dateien
 | Datei | Inhalt |
 |---|---|
-| `index.html` | Ansichten: Anmelden, Start, Lernen, Geschafft, Klausur-Ergebnis |
+| `index.html` | Ansichten: Anmelden, Start, Lernen, Geschafft, Klausur-Ergebnis, Vortragen (Themen, Vortrag, Skript), Maskottchen Lauscher (SVG-Vorlage) |
 | `style.css` | Dark Swiss · Editorial Minimalism (wie das Vault-Design seit 20.11.2026) |
 | `logik.js` | Antwortprüfung, Karteikasten, fällige/neue Karten, Tagesziel, Serie, Statistik, Markdown – ohne Oberfläche, testbar |
 | `app.js` | Oberfläche, Datenzugriff (supabase-js) und Offline-Betrieb (Warteschlange, gespeicherter Stand) |
@@ -33,5 +33,7 @@ Die Daten schützt der Login (Registrierung in Supabase aus) plus Row Level Secu
 - **Klausur-Pool:** Stapel mit ID `Klausur-Pool/…` (aus den Lernmodus-Blöcken im Vault). Selbstbewertung in drei Stufen: *nicht gewusst*, *unsicher* (Fach bleibt, morgen wieder), *gewusst*. Neue Pool-Karten ohne Tageslimit. **Klausur simulieren:** 20 zufällige Pool-Fragen, Ergebnis in % am Ende (unsicher zählt halb), Verlauf in Tabelle `pruefungen`.
 - **Schwierige Karten:** schon falsch beantwortet und noch in Fach 0–1 oder mit Fehlerquote ab 34 %. **Schwächen:** die 3 Stapel mit der schlechtesten Trefferquote (ab 6 Antworten, unter 80 %). **Sicher:** Karte ab Fach 3.
 - **Melden:** Knopf an der Musterantwort → Tabelle `meldungen`; recApp Sync schreibt Meldungen und „Doch richtig“ beim Hochladen in die Vault-Notiz *Rückmeldungen recApp*.
+- **Vortragen (nur iPhone, Reiter unten):** Thema wählen und es dem Maskottchen **Lauscher** erklären. Lauscher hört nicht wirklich zu (kein Mikrofon): Er reagiert alle 3–7,5 s zufällig (nicken, Ohren spitzen, Kopf schief, nachdenken, staunen, lachen – nie zweimal dasselbe, gut die Hälfte mit kurzem Satz). Antippen = er erschrickt. Uhr läuft, Bildschirm bleibt an (Wake Lock). Wann welches Thema vorgetragen wurde, merkt sich nur das Gerät (localStorage `recapp-vortraege`). Reaktionen: `REAKTIONEN` in `logik.js`, Aussehen: Klassen `r-…` in `style.css`.
+- **Skript:** Im Vortrag über „Skript“ – der Text der Vorlesungs-/Themennotiz (Tabelle `skripte`, kommt über recApp Sync; ohne Bilder, Lernkarten und Abfragen). Fehlt die Tabelle oder das Skript, zeigt die App die Lernkarten des Themas. Offline aus dem Speicher (`recapp-skripte`).
 - **Offline:** Die App merkt sich den zuletzt geladenen Stand und alle Antworten in einer Warteschlange (localStorage); wieder online wird sie automatisch übertragen. Nicht abmelden, solange etwas wartet.
-- **Datenbank:** `supabase/ergaenzung-2-tagesziel-klausur.sql` (im Java-Projekt) muss ausgeführt sein. Ohne sie läuft die App, aber ohne Klausurtermine, Klausur-Ergebnisse und Meldungen.
+- **Datenbank:** `supabase/ergaenzung-2-tagesziel-klausur.sql` und `ergaenzung-3-skripte.sql` (im Java-Projekt) ausführen. Ohne Ergänzung 2 fehlen Klausurtermine, Klausur-Ergebnisse und Meldungen, ohne Ergänzung 3 die Skripte.
