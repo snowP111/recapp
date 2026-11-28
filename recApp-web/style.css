@@ -225,6 +225,130 @@ mark { background: rgba(227, 192, 74, .25); color: inherit; padding: 0 2px; }
   font-size: 10px; font-weight: 600; letter-spacing: .16em; padding: 4px 12px;
 }
 
+/* ---------- Reiter (nur iPhone): Lernen · Vortragen ---------- */
+.reiter {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; display: flex;
+  background: var(--bg); border-top: 1px solid var(--linie);
+  padding: 0 max(16px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px, env(safe-area-inset-left));
+}
+.reiter button {
+  flex: 1; min-height: 56px; background: none; border: none; cursor: pointer; color: var(--gedaempft);
+  font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+}
+.reiter button span { display: inline-block; padding: 6px 0 5px; border-bottom: 1px solid transparent; }
+.reiter button.aktiv { color: var(--text); }
+.reiter button.aktiv span { border-bottom-color: var(--akzent); }
+#app.mit-reiter { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+@media (min-width: 600px) { .reiter { display: none !important; } #app.mit-reiter { padding-bottom: calc(48px + env(safe-area-inset-bottom)); } }
+
+/* ---------- Vortragen ---------- */
+.vortrag-kopf { display: grid; grid-template-columns: 1fr 88px; gap: 16px; align-items: end; }
+.vortrag-kopf .headline { margin-bottom: 0; }
+.lauscher-klein { height: 116px; }
+.vortrag-kopf + .abschnitt-kopf { margin-top: 32px; }
+.vortrag .kopf { margin-bottom: 24px; }
+.vortrag-titel { font-size: 21px; font-weight: 500; letter-spacing: -.01em; line-height: 1.25; margin: 8px 0 0; }
+.buehne {
+  display: flex; justify-content: center; width: 100%; height: clamp(200px, 40svh, 340px); margin-top: 24px;
+  background: none; border: none; padding: 0; cursor: pointer; touch-action: manipulation;
+}
+.buehne .lauscher { width: auto; height: 100%; max-width: 100%; }
+.lauscher-text {
+  min-height: 34px; margin: 16px 0 0; font-size: 24px; font-weight: 500; letter-spacing: -.02em; line-height: 1.3;
+  opacity: 0; transition: opacity .2s;
+}
+.lauscher-text.zeigen { opacity: 1; }
+.vortrag-aktionen { margin: 24px 0 0; }
+.vortrag .fortschritt-text.laeuft { color: var(--text); }
+
+/* ---------- Skript ---------- */
+.skript { margin-top: 16px; line-height: 1.6; }
+.skript h2 { font-size: 28px; font-weight: 600; letter-spacing: -.03em; line-height: 1.1; margin: 0 0 24px; }
+.skript h3 { font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--akzent-hell);
+  margin: 48px 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--linie); }
+.skript h4 { font-size: 17px; font-weight: 600; margin: 32px 0 8px; }
+.skript h5 { font-size: 15px; font-weight: 600; margin: 24px 0 8px; }
+.skript p { margin: 0 0 12px; }
+.skript ul, .skript ol { margin: 0 0 12px; padding-left: 20px; }
+.skript li { margin-bottom: 6px; }
+.skript em { color: var(--gedaempft); }
+.skript hr { border: none; border-top: 1px solid var(--linie-stark); margin: 48px 0; }
+.skript .hinweis { border-left: 1px solid var(--linie-stark); padding: 2px 0 2px 16px; margin: 0 0 16px; }
+.skript .hinweis .label { margin-bottom: 8px; }
+.skript .tabelle { overflow-x: auto; margin: 0 0 16px; }
+.skript table { border-collapse: collapse; font-size: 14px; line-height: 1.45; min-width: 100%; }
+.skript th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--gedaempft); }
+.skript th, .skript td { padding: 8px 16px 8px 0; border-bottom: 1px solid var(--linie); vertical-align: top; }
+.skript-karte { border-bottom: 1px solid var(--linie); padding: 16px 0; }
+.skript-karte .frage-klein { font-weight: 500; margin: 0 0 8px; }
+.skript-karte .antwort { color: var(--gedaempft); font-size: 15px; }
+
+/* ---------- Lauscher (Maskottchen im Reiter „Vortragen“) ---------- */
+.lauscher { display: block; width: 100%; height: 100%; overflow: visible; --bx: 0px; --by: 0px; }
+.lauscher * { transform-box: fill-box; }
+.l-boden { stroke: var(--linie-stark); stroke-width: 1; }
+.l-fell { fill: var(--text); }
+.l-fell-2 { fill: #c8c4bc; }
+.l-innen { fill: #d9d4cb; }
+.l-schwarz { fill: var(--bg); }
+.l-glanz { fill: var(--text); }
+.l-nase { fill: var(--akzent); }
+.l-mund { fill: none; stroke: var(--bg); stroke-width: 3; stroke-linejoin: miter; stroke-linecap: square; }
+.l-mund-o { fill: var(--bg); }
+.l-mund-lacht, .l-mund-o { display: none; }
+.lauscher.m-lacht .l-mund-normal, .lauscher.m-o .l-mund-normal { display: none; }
+.lauscher.m-lacht .l-mund-lacht, .lauscher.m-o .l-mund-o { display: inline; }
+
+.l-ganz { transform-origin: 50% 100%; animation: l-atmen 4.2s ease-in-out infinite; }
+.l-kopf { transform-origin: 50% 100%; transition: transform .25s ease; }
+.l-ohr { transform-origin: 50% 100%; transition: transform .2s ease; }
+.l-ohr-l { animation: l-wiegen 6s ease-in-out infinite; }
+.l-ohr-r { animation: l-wiegen 6s ease-in-out -3s infinite; }
+.l-augen { transform: translate(var(--bx), var(--by)); transition: transform .18s ease; }
+.l-auge { transform-origin: 50% 50%; transition: transform .08s linear; }
+.lauscher.blinzeln .l-auge { transform: scaleY(.1); }
+
+@keyframes l-atmen { 50% { transform: scaleY(1.015); } }
+@keyframes l-wiegen { 0%, 100% { transform: rotate(-1.5deg); } 50% { transform: rotate(1.5deg); } }
+
+/* Reaktionen – je eine Klasse am SVG, das Skript nimmt sie nach der Dauer wieder ab */
+.r-nicken .l-kopf { animation: l-nicken .9s ease-in-out; }
+@keyframes l-nicken { 20%, 60% { transform: translateY(5px) rotate(1deg); } 40%, 80% { transform: translateY(-1px); } }
+
+.r-lauschen .l-ohr-l { animation: l-zucken-l .35s ease-in-out 3; }
+.r-lauschen .l-ohr-r { animation: l-zucken-r .35s ease-in-out .1s 3; }
+@keyframes l-zucken-l { 50% { transform: rotate(-9deg) translateY(-4px); } }
+@keyframes l-zucken-r { 50% { transform: rotate(9deg) translateY(-4px); } }
+
+.r-schief .l-kopf { transform: rotate(8deg); }
+.r-schief .l-ohr-l { animation: none; transform: rotate(-14deg); }
+
+.r-nachdenken .l-kopf { transform: rotate(-4deg); }
+.r-nachdenken .l-ohr-r { animation: none; transform: rotate(38deg); }
+
+.r-staunen .l-ganz { animation: l-huepfen .45s ease-out; }
+.r-staunen .l-ohr { animation: none; transform: translateY(-8px) scaleY(1.06); }
+.r-staunen .l-auge { transform: scale(1.2); }
+
+.r-lachen .l-ganz { animation: l-wippen .3s ease-in-out 3; }
+.r-lachen .l-auge { transform: scaleY(.4) translateY(4px); }
+
+.r-he .l-ohr-l { animation: none; transform: rotate(-58deg); transition-duration: .1s; }
+.r-he .l-ohr-r { animation: none; transform: rotate(58deg); transition-duration: .1s; }
+.r-he .l-auge { transform: scaleY(.15); }
+.r-he .l-ganz { animation: l-huepfen .4s ease-out; }
+
+.r-jubeln .l-ganz { animation: l-huepfen .5s ease-out 3; }
+.r-jubeln .l-ohr-l { animation: l-zucken-l .25s ease-in-out 6; }
+.r-jubeln .l-ohr-r { animation: l-zucken-r .25s ease-in-out 6; }
+
+@keyframes l-huepfen { 40% { transform: translateY(-16px) scaleY(1.03); } 70% { transform: translateY(0) scaleY(.97); } }
+@keyframes l-wippen { 50% { transform: translateY(-5px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .lauscher *, .lauscher .l-ganz { animation: none !important; }
+}
+
 /* ---------- Mac: 12er-Raster, asymmetrisch ---------- */
 @media (min-width: 900px) {
   #app { padding-left: 48px; padding-right: 48px; padding-top: 32px; }

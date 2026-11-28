@@ -338,16 +338,22 @@
       }
       return esc(t)
         .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, "$2")
-        .replace(/\[\[([^\]]+)\]\]/g, "$1")
+        .replace(/\[\[([^\]#]*)#?([^\]]*)\]\]/g, (m, notiz, anker) => notiz || anker)
         .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
         .replace(/(^|[^*])\*([^*\s][^*]*?)\*(?!\*)/g, "$1<em>$2</em>")
         .replace(/==([^=]+)==/g, "<mark>$1</mark>");
     }).join("");
   }
 
-  function markdown(text) {
+  /**
+   * Kleines Markdown. Mit { skript: true } zusätzlich Überschriften, Tabellen, Obsidian-Callouts,
+   * Zitate und Trennlinien (für das Skript im Reiter „Vortragen“); eingebettete Bilder fallen weg.
+   */
+  function markdown(text, optionen) {
+    const skript = Boolean(optionen && optionen.skript);
     // Zeilenumbrüche in Display-Formeln würden sie zerreißen
     const quelle = String(text || "").replace(/\r\n/g, "\n").replace(/\$\$[\s\S]+?\$\$/g, (m) => m.replace(/\n/g, " "));
+    const zeilen = quelle.split("\n");
     const html = [];
     let liste = null;
     let code = null;
@@ -355,7 +361,8 @@
       if (liste) html.push(`<${liste.typ}>${liste.punkte.map((p) => `<li>${p}</li>`).join("")}</${liste.typ}>`);
       liste = null;
     };
-    for (const zeile of quelle.split("\n")) {
+    for (let i = 0; i < zeilen.length; i++) {
+      const zeile = zeilen[i];
       if (code) {
         if (/^\s*```/.test(zeile)) {
           html.push(`<pre><code>${esc(code.join("\n"))}</code></pre>`);
@@ -369,6 +376,44 @@
         listeZu();
         code = [];
         continue;
+      }
+      if (skript) {
+        const ueber = zeile.match(/^(#{1,6})\s+(.*)$/);
+        if (ueber) {
+          listeZu();
+          const ebene = Math.min(5, ueber[1].length + 1);         // # → h2, ## → h3 …
+          html.push(`<h${ebene}>${inline(ueber[2])}</h${ebene}>`);
+          continue;
+        }
+        if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(zeile)) {
+          listeZu();
+          html.push("<hr>");
+          continue;
+        }
+        if (/^\s*>/.test(zeile)) {
+          listeZu();
+          const block = [];
+          while (i < zeilen.length && /^\s*>/.test(zeilen[i])) block.push(zeilen[i++].replace(/^\s*> ?/, ""));
+          i--;
+          const callout = block[0].match(/^\[!([\w-]+)\][+-]?\s*(.*)$/);
+          const titel = callout ? (callout[2] || callout[1]) : "";
+          const innen = markdown((callout ? block.slice(1) : block).join("\n"), optionen);
+          html.push(`<div class="hinweis">${titel ? `<div class="label">${inline(titel)}</div>` : ""}${innen}</div>`);
+          continue;
+        }
+        if (/^\s*\|/.test(zeile) && i + 1 < zeilen.length && /^\s*\|?\s*:?-{2,}/.test(zeilen[i + 1])) {
+          listeZu();
+          const zellen = (z) => z.trim().replace(/^\|/, "").replace(/\|$/, "").split(/(?<!\\)\|/).map((c) => inline(c.trim().replace(/\\\|/g, "|")));
+          const kopf = zellen(zeile);
+          i += 2;
+          const rumpf = [];
+          while (i < zeilen.length && /^\s*\|/.test(zeilen[i])) rumpf.push(zellen(zeilen[i++]));
+          i--;
+          html.push(`<div class="tabelle"><table><thead><tr>${kopf.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>`
+            + rumpf.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("") + "</tbody></table></div>");
+          continue;
+        }
+        if (/^\s*!\[/.test(zeile)) continue;                      // Bild – im Skript nicht verfügbar
       }
       const ul = zeile.match(/^\s*[-*+] (.*)$/);
       const ol = zeile.match(/^\s*\d+[.)] (.*)$/);
@@ -389,6 +434,63 @@
     return html.join("");
   }
 
+  // ==========================================
+  // VORTRAGEN – Lauscher hört nicht wirklich zu, er reagiert nur ab und zu (Placebo)
+  // ==========================================
+
+  /** Reaktionen: Klassen fürs SVG, Dauer in ms, mögliche Sätze, Gewicht für die Zufallsauswahl. */
+  const REAKTIONEN = [
+    { name: "nicken", klassen: "r-nicken", dauer: 900, gewicht: 30, texte: ["Mhm.", "Ja.", "Verstehe.", "Okay."] },
+    { name: "lauschen", klassen: "r-lauschen", dauer: 1100, gewicht: 18, texte: ["Spannend.", "Erzähl weiter."] },
+    { name: "schief", klassen: "r-schief", dauer: 1800, gewicht: 12, texte: ["Und dann?", "Wie meinst du das?", "Warum?"] },
+    { name: "nachdenken", klassen: "r-nachdenken", dauer: 2000, gewicht: 12, texte: ["Hm …", "Moment …"] },
+    { name: "staunen", klassen: "r-staunen m-o", dauer: 900, gewicht: 10, texte: ["Oh!", "Ach so!", "Echt?"] },
+    { name: "lachen", klassen: "r-lachen m-lacht", dauer: 1000, gewicht: 10, texte: ["Gut!", "Klingt logisch.", "Leuchtet ein."] },
+    { name: "blick", klassen: "", dauer: 1500, gewicht: 8, texte: [] },
+  ];
+  const ANSTUPSEN = { name: "he", klassen: "r-he m-o", dauer: 700, texte: ["He!", "Hihi.", "Ich hör ja zu!"] };
+  const JUBELN = { name: "jubeln", klassen: "r-jubeln m-lacht", dauer: 1600, texte: ["Gut erklärt."] };
+  const PAUSE_MIN = 3000;
+  const PAUSE_MAX = 7500;
+  const TEXT_ANTEIL = 0.55;
+
+  /**
+   * Wählt die nächste Reaktion (nie zweimal dieselbe hintereinander), ob ein Satz dazukommt,
+   * und wie lange danach Ruhe ist. zufall: Funktion wie Math.random (für Tests austauschbar).
+   */
+  function naechsteReaktion(letzte, zufall) {
+    const z = zufall || Math.random;
+    const kandidaten = REAKTIONEN.filter((r) => r.name !== letzte);
+    const summe = kandidaten.reduce((s, r) => s + r.gewicht, 0);
+    let wurf = z() * summe;
+    let r = kandidaten[kandidaten.length - 1];
+    for (const k of kandidaten) {
+      wurf -= k.gewicht;
+      if (wurf < 0) {
+        r = k;
+        break;
+      }
+    }
+    const text = r.texte.length && z() < TEXT_ANTEIL ? r.texte[Math.floor(z() * r.texte.length)] : "";
+    const pause = Math.round(PAUSE_MIN + z() * (PAUSE_MAX - PAUSE_MIN));
+    return { ...r, text, pause };
+  }
+
+  /** 272 → "4:32", 3725 → "1:02:05" */
+  function dauerText(sekunden) {
+    const s = Math.max(0, Math.floor(sekunden));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const zwei = (n) => String(n).padStart(2, "0");
+    return h ? `${h}:${zwei(m)}:${zwei(s % 60)}` : `${m}:${zwei(s % 60)}`;
+  }
+
+  /** "heute", "gestern", "vor 3 Tagen" */
+  function seitText(tag, heute) {
+    const d = tageBis(tag, heute);
+    return d <= 0 ? "heute" : d === 1 ? "gestern" : `vor ${d} Tagen`;
+  }
+
   const Logik = {
     normalisiere, levenshtein, pruefeAntwort, datum, plusTage, tageBis, wochenStart,
     naechsterStand, wirdGetippt, heutigeKarten, nachKlausurSortieren, KLAUSUR_VORLAUF,
@@ -396,6 +498,7 @@
     istPool, POOL_PRAEFIX, UNSICHER,
     istSicher, istSchwierig, sicherProzent, schwaechen, woche, kartenSekunden, pruefungsProzent, SICHER_AB,
     markdown, esc,
+    REAKTIONEN, ANSTUPSEN, JUBELN, PAUSE_MIN, PAUSE_MAX, naechsteReaktion, dauerText, seitText,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = Logik;
   else global.Logik = Logik;
